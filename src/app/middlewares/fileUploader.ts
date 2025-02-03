@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Request } from 'express';
 import multer from 'multer';
+const fs = require("fs");
 
 export const uploadFile = () => {
   const storage = multer.diskStorage({
@@ -22,6 +23,10 @@ export const uploadFile = () => {
         uploadPath = 'uploads/video';
       } else {
         uploadPath = 'uploads';
+      }
+
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
       }
 
       if (

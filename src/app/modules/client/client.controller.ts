@@ -1,12 +1,12 @@
 import catchAsync from "../../../shared/catchasync";
 import sendResponse from "../../../shared/sendResponse";
-import { IReqUser } from "../auth/auth.interface"; 
-import { Request, RequestHandler, Response } from 'express'; 
-import { PartnerService } from "./partner.service";
+import { IReqUser } from "../auth/auth.interface";
+import { Request, RequestHandler, Response } from 'express';
+import { ClientService } from "./client.service";
 import { RequestData } from "../../../interfaces/common";
 
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
-  const result = await PartnerService.updateProfile(req as any);
+  const result = await ClientService.updateProfile(req as any);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -16,8 +16,8 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getProfile = catchAsync(async (req: Request, res: Response) => {
- const user =  req.user as IReqUser;
-  const result = await PartnerService.getProfile(user);
+  const user = req.user as IReqUser;
+  const result = await ClientService.getProfile(user);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -26,18 +26,7 @@ const getProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
-  await PartnerService.deleteMyAccount(req.body);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Account deleted!",
-  });
-});
-
-export const PartnerController = {
-  deleteMyAccount,
+export const ClientController = {
   getProfile,
   updateProfile,
 };
- 

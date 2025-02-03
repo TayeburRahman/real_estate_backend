@@ -1,5 +1,5 @@
- 
-import { Request, RequestHandler, Response } from 'express';  
+
+import { Request, RequestHandler, Response } from 'express';
 import catchAsync from '../../../shared/catchasync';
 import { AuthService } from './auth.service';
 import sendResponse from '../../../shared/sendResponse';
@@ -8,35 +8,30 @@ import { IReqUser } from './auth.interface';
 
 const registrationAccount = catchAsync(async (req: Request, res: Response) => {
   const { role } = await AuthService.registrationAccount(req.body);
-  const message =
-    role === "USER"
-      ? "Please check your email for the activation OTP code."
-      : "Your account is awaiting admin approval.";
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message,
+    message: "Account register successfully!",
     data: role,
   });
 });
 
-const activateAccount = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthService.activateAccount(req.body);
-  const { refreshToken } = result;
+// const activateAccount = catchAsync(async (req: Request, res: Response) => {
+//   const result = await AuthService.activateAccount(req.body);
+//   const { refreshToken } = result;
 
-  const cookieOptions = {
-    secure: config.env === "production",
-    httpOnly: true,
-  };
-  res.cookie("refreshToken", refreshToken, cookieOptions);
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Activation code verified successfully.",
-    data: result,
-  });
-});
+//   const cookieOptions = {
+//     secure: config.env === "production",
+//     httpOnly: true,
+//   };
+//   res.cookie("refreshToken", refreshToken, cookieOptions);
+//   sendResponse(res, {
+//     statusCode: 201,
+//     success: true,
+//     message: "Activation code verified successfully.",
+//     data: result,
+//   });
+// });
 
 const loginAccount = catchAsync(async (req: Request, res: Response) => {
   const loginData = req.body;
@@ -128,9 +123,20 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
+  await AuthService.deleteMyAccount(req.query as any);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Account delete successfully.",
+  });
+});
+
+
+
 export const AuthController = {
   registrationAccount,
-  activateAccount,
+  // activateAccount,
   loginAccount,
   changePassword,
   forgotPass,
@@ -139,5 +145,5 @@ export const AuthController = {
   checkIsValidForgetActivationCode,
   resendCodeActivationAccount,
   resendCodeForgotAccount,
+  deleteMyAccount
 };
- 
