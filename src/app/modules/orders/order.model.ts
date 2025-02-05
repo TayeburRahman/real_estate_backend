@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Types } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { ICoordinates, IOrder } from './order.interface';
 
 const Coordinates = new Schema<ICoordinates>({
@@ -22,7 +22,7 @@ const Coordinates = new Schema<ICoordinates>({
 const orderSchema = new Schema<IOrder>(
     {
         clientId: {
-            type: Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'Client',
             required: true,
         },
@@ -57,12 +57,13 @@ const orderSchema = new Schema<IOrder>(
         },
         linkedAgents: {
             type: [Types.ObjectId],
-            ref: 'Client',
+            ref: 'Agent',
             default: [],
         },
-        uploadFiles: [{
-            url: { type: String },
-        }],
+        uploadFiles: {
+            type: [{ url: String }],
+            default: [],
+        },
         descriptions: { type: String },
         notes: [{
             text: { type: String },
@@ -91,10 +92,8 @@ const orderSchema = new Schema<IOrder>(
     { timestamps: true }
 );
 
-// Index for geospatial queries
 orderSchema.index({ locations: '2dsphere' });
 
-const Orders = mongoose.model('Message', orderSchema);
+const Orders = mongoose.model('Order', orderSchema);
 
-export default Orders;
-
+export default { Orders };

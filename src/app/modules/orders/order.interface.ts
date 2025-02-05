@@ -17,7 +17,7 @@ export interface IOrder {
         city: string;
         state: string;
     };
-    pickupKeyOffice?: string;
+    pickupKeyOffice?: boolean;
     contactAgent: boolean;
     contactOwner: boolean;
     contactInfo?: {
@@ -29,9 +29,7 @@ export interface IOrder {
         phone2?: string;
     };
     linkedAgents?: Types.ObjectId[];
-    uploadFiles?: {
-        url: string;
-    }[];
+    uploadFiles?: { url: string }[];
     descriptions?: string;
     notes?: {
         text?: string;
