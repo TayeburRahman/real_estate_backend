@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import { Request } from 'express';
 import multer from 'multer';
 const fs = require("fs");

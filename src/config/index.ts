@@ -29,17 +29,6 @@ export default {
     smtp_password: process.env.SMTP_PASSWORD,
     NAME: process.env.SERVICE_NAME,
   },
-  cloudinary: {
-    cloud_name: process.env.CLOUD_NAME,
-    api_key: process.env.API_KEY,
-    api_secret: process.env.API_SECRET,
-  },
-  resetlink: process.env.RESET_PASS_UI_LINK,
-
-  sendgrid: {
-    from_email: process.env.FORM_EMAIL,
-    api_key: process.env.SEND_GRIDAPI_KEY,
-  },
   stripe: {
     stripe_secret_key: process.env.STRIPE_SECRET_KEY,
   },

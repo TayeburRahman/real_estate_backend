@@ -63,25 +63,6 @@ const getProfile = async (user: { userId: string }) => {
   return result;
 };
 
-const deleteMyAccount = async (payload: DeleteAccountPayload) => {
-  const { user } = payload;
-
-  const isUserExist = await Auth.isAuthExist(email);
-
-  if (!isUserExist) {
-    throw new ApiError(404, "User does not exist");
-  }
-
-  if (
-    isUserExist.password &&
-    !(await Auth.isPasswordMatched(password, isUserExist.password))
-  ) {
-    throw new ApiError(402, "Password is incorrect");
-  }
-
-  await Client.deleteOne({ authId: isUserExist._id });
-  return await Auth.deleteOne({ email });
-};
 
 export const ClientService = {
   getProfile,
