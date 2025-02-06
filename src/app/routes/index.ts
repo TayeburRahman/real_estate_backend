@@ -3,6 +3,7 @@ import { AuthRoutes } from '../modules/auth/auth.routes';
 import { MessageRoutes } from '../modules/messages/message.routes';
 import { NotificationRoutes } from '../modules/notifications/notifications.routes';
 import { ServiceRoutes } from '../modules/service/service.routes';
+import { OrderRoutes } from '../modules/orders/order.routes';
 
 const router = express.Router();
 
@@ -25,6 +26,10 @@ const moduleRoutes = [
   {
     path: '/service',
     route: ServiceRoutes,
+  },
+  {
+    path: '/orders',
+    route: OrderRoutes,
   },
 
 

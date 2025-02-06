@@ -1,5 +1,5 @@
 import mongoose, { Schema, Types } from 'mongoose';
-import { ICoordinates, IOrder } from './order.interface';
+import { IComment, ICoordinates, IOrder, ITasks } from './order.interface';
 
 const Coordinates = new Schema<ICoordinates>({
     type: {
@@ -61,7 +61,7 @@ const orderSchema = new Schema<IOrder>(
             default: [],
         },
         uploadFiles: {
-            type: [{ url: String }],
+            type: [String],
             default: [],
         },
         descriptions: { type: String },
@@ -69,6 +69,12 @@ const orderSchema = new Schema<IOrder>(
             text: { type: String },
             memberId: { type: Types.ObjectId, ref: 'Member' },
             date: { type: Date, default: Date.now },
+        }],
+        schedule: [{
+            date: { type: Date },
+            start_time: { type: String },
+            end_time: { type: String },
+            memberId: [{ type: Types.ObjectId, ref: 'Member' }],
         }],
         totalAmount: { type: Number, required: true },
         status: {
@@ -91,9 +97,72 @@ const orderSchema = new Schema<IOrder>(
     },
     { timestamps: true }
 );
-
 orderSchema.index({ locations: '2dsphere' });
 
-const Orders = mongoose.model('Order', orderSchema);
+// ===================================
+const taskSchema = new Schema<ITasks>({
+    orderId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+        required: true,
+    },
+    serviceId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+        required: true,
+    },
+    memberId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Member',
+        default: null,
+    },
+    sourceFile: {
+        type: [{
+            url: String,
+        }],
+        default: [],
+    },
+    finishFile: {
+        type: [{
+            url: String,
+        }],
+        default: [],
+    }
+});
 
-export default { Orders };
+const commentSchema = new Schema<IComment>({
+    orderId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+        required: true,
+    },
+    fileId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+    },
+    replayId: {
+        type: Types.ObjectId,
+        default: null
+    },
+    comment: [{
+        text: String,
+        userId: {
+            type: Types.ObjectId,
+            refPath: 'userType',
+            required: true,
+        },
+        userType: {
+            type: String,
+            enum: ['Member', 'Agent', 'Client'],
+            required: true,
+        }
+    }]
+});
+
+
+const Orders = mongoose.model<IOrder>('Order', orderSchema);
+const Tasks = mongoose.model<ITasks>('Task', taskSchema);
+const Comment = mongoose.model<IComment>('Comment', commentSchema);
+
+export { Orders, Tasks, Comment };
+
