@@ -45,6 +45,7 @@ export interface IOrder {
     totalAmount: number;
     status: 'Submitted' | 'Scheduled' | 'In-Production' | 'Delivered' | 'Revisions' | 'Completed';
     paymentStatus: 'Invoiced' | 'Unpaid' | 'Paid';
+    taskIds: Types.ObjectId[] | null;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -76,5 +77,11 @@ export interface IComment {
         userId: Types.ObjectId;
         userType: 'Member' | 'Agent' | 'Client';
     };
+}
+
+
+export interface CreateTasksInput {
+    uniqueServices: Set<Types.ObjectId>;
+    orderId: Types.ObjectId;
 }
 

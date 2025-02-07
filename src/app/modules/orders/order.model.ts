@@ -77,6 +77,11 @@ const orderSchema = new Schema<IOrder>(
             memberId: [{ type: Types.ObjectId, ref: 'Member' }],
         }],
         totalAmount: { type: Number, required: true },
+        taskIds: {
+            type: [Schema.Types.ObjectId],
+            default: null,
+            ref: 'Task',
+        },
         status: {
             type: String,
             enum: [
