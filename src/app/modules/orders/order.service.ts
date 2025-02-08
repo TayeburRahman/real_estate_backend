@@ -57,6 +57,105 @@ const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => 
     }
 };
 
+
+const editServicesOfOrder = async (
+    orderId: Types.ObjectId,
+    updateData: { serviceIds?: Types.ObjectId[]; packageIds?: Types.ObjectId[] }
+) => {
+    try {
+        const order = await Orders.findById(orderId) as IOrder;
+        if (!order) throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+
+        let { serviceIds = [], packageIds = [] } = updateData;
+
+        // Find total servicesIds
+        // find total existing task
+        // Filter(existing task to total servicesIds) missing service id for delete task
+        // Filter new servicesIds for create task;
+        // Update packages and servicesIds
+        // Delete and update tasks id form order
+
+
+        let totalServices = [...serviceIds];
+
+        if (packageIds?.length) {
+            for (const pkg of packageIds) {
+                const getPackage = await Package.findById(pkg);
+                if (!getPackage) {
+                    throw new ApiError(httpStatus.NOT_FOUND, "One or more packages not found, please choose another package or try again.");
+                }
+                getPackage.services.forEach((service: any) => totalServices.push(service.toString()));
+            }
+        }
+        console.log("totalServices:==========================", totalServices); //======1
+
+        const existingTasks = await Tasks.find({ orderId });
+        const existingTaskServiceIds = [] as string[];
+        for (const ext of existingTasks) {
+            const getSid = ext.serviceId;
+            if (!getSid) {
+                throw new ApiError(httpStatus.NOT_FOUND, "One or more Task service id not found, please try again.");
+            }
+            existingTaskServiceIds.push(getSid.toString());
+        }
+
+        console.log("existingTaskServiceIds:==========================", existingTaskServiceIds);//======2
+
+        const removedServicesTask = [...existingTaskServiceIds].filter((serviceId: any) => !totalServices.includes(serviceId.toString()));
+        console.log("removedServicesTask:==========================", removedServicesTask);//======3
+
+        if (removedServicesTask.length > 0) {
+            const task = await Tasks.deleteMany({ orderId, serviceId: { $in: removedServicesTask } });
+            console.log("totally deleted task:", task);//======4+
+        }
+
+
+        // console.log(`Total existing task:`, existingTaskServiceIds); //======2
+        // console.log('total servicesIds==========', totalServices)//======1
+
+        const newServices = [...totalServices].filter(serviceId => !existingTaskServiceIds.includes(serviceId.toString()));
+
+
+        console.log("new services:====================", newServices); //======4
+
+
+        let newTaskIds = [] as Object;
+        if (newServices.length > 0) {
+            const { taskIds } = await createTasks(newServices, orderId);
+            newTaskIds = taskIds;
+        }
+        console.log("new create taskIds:", newTaskIds); //======5
+
+
+        const deleteTask = await Orders.findByIdAndUpdate(orderId, {
+            $pull: { taskIds: { $in: removedServicesTask } }
+        });
+
+        console.log("deleteTask===========", deleteTask); //======6
+        // delete task id need update 
+        const updatedOrder = await Orders.findByIdAndUpdate(
+            orderId,
+            {
+                $set: {
+                    serviceIds: Array.from(serviceIds),
+                    packageIds: packageIds
+                },
+                $push: { taskIds: { $each: newTaskIds } }
+            },
+            { new: true }
+        );
+
+        console.log("update:", updatedOrder) //======6
+
+        if (!updatedOrder) throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update order");
+
+        return { data: updatedOrder, taskIds: updatedOrder.taskIds };
+    } catch (error: any) {
+        console.error("Error updating order:", error);
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+    }
+};
+
 const createTasks = async (uniqueServices: Types.ObjectId[], orderId: Types.ObjectId) => {
     try {
         const tasksToInsert = uniqueServices.map(serviceId => ({ serviceId, orderId }));
@@ -67,10 +166,40 @@ const createTasks = async (uniqueServices: Types.ObjectId[], orderId: Types.Obje
         throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to create tasks");
     }
 };
+// --
+const updateOrder = async (orderId: Types.ObjectId, updateData: Partial<IOrder>, files?: Express.Multer.File[]) => {
+    try {
+        const { taskIds, packageIds, serviceIds, schedule, ...allowedUpdates } = updateData;
+
+        if (files?.length) {
+            allowedUpdates.uploadFiles = files.map(file => file.path);
+        }
+
+        const updatedOrder = await Orders.findByIdAndUpdate(
+            orderId,
+            { $set: allowedUpdates },
+            { new: true }
+        );
+
+        if (!updatedOrder) throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+
+        return { data: updatedOrder };
+    } catch (error: any) {
+        console.error("Error updating order:", error);
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+    }
+};
+
+
+
+
+
 
 
 export const OrdersService = {
-    createNewOrder
+    createNewOrder,
+    updateOrder,
+    editServicesOfOrder,
 }
 
 
