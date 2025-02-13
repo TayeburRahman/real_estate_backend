@@ -29,8 +29,6 @@ export interface IPricingGroup {
   }[];
 }
 
- 
-
 export interface GetAllGetQuery extends Record<string, unknown> {
   searchTerm?: string;
   category?: string;

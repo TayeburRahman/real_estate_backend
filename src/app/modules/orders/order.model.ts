@@ -70,12 +70,12 @@ const orderSchema = new Schema<IOrder>(
             memberId: { type: Types.ObjectId, ref: 'Member' },
             date: { type: Date, default: Date.now },
         }],
-        schedule: [{
+        schedule: {
             date: { type: Date },
             start_time: { type: String },
             end_time: { type: String },
             memberId: [{ type: Types.ObjectId, ref: 'Member' }],
-        }],
+        },
         totalAmount: { type: Number, required: true },
         taskIds: {
             type: [Schema.Types.ObjectId],

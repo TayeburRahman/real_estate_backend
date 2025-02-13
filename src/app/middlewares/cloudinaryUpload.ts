@@ -6,6 +6,7 @@ import cloudinary from '../../config/cloudinary';
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
+    console.log(file);
     const fileType = file.mimetype.startsWith('video') ? 'video' : 'image';
     return {
       folder: 'real_estate',

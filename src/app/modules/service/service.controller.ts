@@ -3,6 +3,8 @@ import sendResponse from "../../../shared/sendResponse";
 import { Request, Response } from 'express';
 import { ServiceService } from "./service.service";
 import { GetAllGetQuery, IPackage, IPricingGroup, IService, IServiceCategory } from "./service.interface";
+import ApiError from "../../../errors/ApiError";
+import httpStatus from "http-status";
 
 const createServiceCategory = catchAsync(async (req: Request, res: Response) => {
   const body = req.body as IServiceCategory;
@@ -15,7 +17,7 @@ const createServiceCategory = catchAsync(async (req: Request, res: Response) => 
   });
 });
 const updateServiceCategory = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body as IServiceCategory;
+  const body = req.body as any;
   const id = req.params.id;
   const result = await ServiceService.updateServiceCategory(id, body as IServiceCategory);
   sendResponse(res, {
@@ -57,8 +59,16 @@ const createService = catchAsync(async (req: Request, res: Response) => {
 });
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const serviceId = req.params.id;
-  const body = req.body as Partial<IService>;
+  let body = req.body as any;
   const files = req.files as Express.Multer.File[];
+
+  if (typeof body.data === "string") {
+    try {
+      body = JSON.parse(body.data);
+    } catch (error) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid JSON format in payload.data");
+    }
+  }
 
   const result = await ServiceService.updateService(serviceId, body, files);
 
@@ -105,8 +115,15 @@ const createPackages = catchAsync(async (req: Request, res: Response) => {
 });
 const updatePackages = catchAsync(async (req: Request, res: Response) => {
   const packageId = req.params.id;
-  const body = req.body as Partial<IService>;
+  let body = req.body as any;
   const files = req.files as Express.Multer.File[];
+  if (typeof body.data === "string") {
+    try {
+      body = JSON.parse(body.data);
+    } catch (error) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid JSON format in payload.data");
+    }
+  }
 
   const result = await ServiceService.updatePackage(packageId, body, files);
 

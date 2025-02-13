@@ -325,7 +325,7 @@ const changePassword = async (user: { authId: string }, payload: ChangePasswordP
   ) {
     throw new ApiError(402, "Old password is incorrect");
   }
-  isUserExist.password = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
+  isUserExist.password = newPassword
   await isUserExist.save();
 };
 

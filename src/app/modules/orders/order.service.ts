@@ -1,9 +1,10 @@
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { Orders, Tasks } from "./order.model";
-import { CreateTasksInput, ICoordinates, IOrder } from "./order.interface";
+import { CreateTasksInput, GetAllOrderQuery, ICoordinates, IOrder, ISchedule } from "./order.interface";
 import { Types } from "mongoose";
 import { Package } from "../service/service.model";
+import QueryBuilder from "../../../builder/QueryBuilder";
 
 
 const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => {
@@ -57,7 +58,6 @@ const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => 
     }
 };
 
-
 const editServicesOfOrder = async (
     orderId: Types.ObjectId,
     updateData: { serviceIds?: Types.ObjectId[]; packageIds?: Types.ObjectId[] }
@@ -65,7 +65,6 @@ const editServicesOfOrder = async (
     try {
         const order = await Orders.findById(orderId) as IOrder;
         if (!order) throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
-
         let { serviceIds = [], packageIds = [] } = updateData;
 
         // Find total servicesIds
@@ -87,7 +86,6 @@ const editServicesOfOrder = async (
                 getPackage.services.forEach((service: any) => totalServices.push(service.toString()));
             }
         }
-        console.log("totalServices:==========================", totalServices); //======1
 
         const existingTasks = await Tasks.find({ orderId });
         const existingTaskServiceIds = [] as string[];
@@ -99,53 +97,58 @@ const editServicesOfOrder = async (
             existingTaskServiceIds.push(getSid.toString());
         }
 
-        console.log("existingTaskServiceIds:==========================", existingTaskServiceIds);//======2
-
         const removedServicesTask = [...existingTaskServiceIds].filter((serviceId: any) => !totalServices.includes(serviceId.toString()));
-        console.log("removedServicesTask:==========================", removedServicesTask);//======3
 
         if (removedServicesTask.length > 0) {
-            const task = await Tasks.deleteMany({ orderId, serviceId: { $in: removedServicesTask } });
-            console.log("totally deleted task:", task);//======4+
+            await Tasks.deleteMany({ orderId, serviceId: { $in: removedServicesTask } });
         }
 
-
-        // console.log(`Total existing task:`, existingTaskServiceIds); //======2
-        // console.log('total servicesIds==========', totalServices)//======1
-
         const newServices = [...totalServices].filter(serviceId => !existingTaskServiceIds.includes(serviceId.toString()));
-
-
-        console.log("new services:====================", newServices); //======4
-
-
         let newTaskIds = [] as Object;
         if (newServices.length > 0) {
             const { taskIds } = await createTasks(newServices, orderId);
             newTaskIds = taskIds;
         }
-        console.log("new create taskIds:", newTaskIds); //======5
 
+        if (removedServicesTask.length) {
+            await Orders.findByIdAndUpdate(orderId, {
+                $pull: { taskIds: { $in: removedServicesTask } }
+            });
+        }
 
-        const deleteTask = await Orders.findByIdAndUpdate(orderId, {
-            $pull: { taskIds: { $in: removedServicesTask } }
-        });
+        const tasksData = await Tasks.find({ orderId });
+        let tasksId = [] as string[];
 
-        console.log("deleteTask===========", deleteTask); //======6
-        // delete task id need update 
+        if (tasksData.length > 0) {
+            for (const ids of tasksData) {
+                tasksId.push(ids._id.toString());
+            }
+        }
+
+        // need duplicate id stay 
+        if (totalServices.length > 0) {
+            for (const serviceId of totalServices) {
+                const tasks = await Tasks.find({ orderId, serviceId }).sort({ _id: 1 });
+
+                if (tasks.length > 1) {
+                    const taskIdsToDelete = tasks.slice(1).map(task => task._id);
+                    await Tasks.deleteMany({ _id: { $in: taskIdsToDelete } });
+                }
+            }
+        }
+
         const updatedOrder = await Orders.findByIdAndUpdate(
             orderId,
             {
                 $set: {
                     serviceIds: Array.from(serviceIds),
-                    packageIds: packageIds
+                    packageIds: packageIds,
+                    taskIds: tasksId
                 },
-                $push: { taskIds: { $each: newTaskIds } }
+
             },
             { new: true }
         );
-
-        console.log("update:", updatedOrder) //======6
 
         if (!updatedOrder) throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update order");
 
@@ -190,8 +193,60 @@ const updateOrder = async (orderId: Types.ObjectId, updateData: Partial<IOrder>,
     }
 };
 
+const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => {
 
+    if (!payload.date || !payload.end_time || !payload.start_time) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Missing required fields for schedule");
+    }
+    const order = await Orders.findById(orderId);
+    if (!order) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    }
+    const { date, start_time, end_time } = payload;
+    const scheduleDate = new Date(date);
 
+    const result = await Orders.findByIdAndUpdate(orderId, {
+        $set: {
+            schedule: {
+                date: scheduleDate,
+                start_time,
+                end_time,
+            },
+        },
+    }, { new: true })
+
+    return result;
+}
+
+const deleteOrder = async (orderId: Types.ObjectId) => {
+    if (!orderId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid order ID");
+    }
+    const result = await Orders.findByIdAndDelete(orderId);
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    }
+    return result;
+}
+
+const getAllOrders = async (query: GetAllOrderQuery) => {
+    const userQuery = new QueryBuilder(Orders.find()
+        .populate({ path: "clientId", select: "name profile_image" })
+        , query)
+        .search(["clientId.name"])
+        .filter()
+        .sort()
+        .paginate()
+        .fields();
+
+    const result = await userQuery.modelQuery;
+    const meta = await userQuery.countTotal();
+
+    return {
+        meta,
+        data: result,
+    };
+}
 
 
 
@@ -200,6 +255,9 @@ export const OrdersService = {
     createNewOrder,
     updateOrder,
     editServicesOfOrder,
+    setScheduledTime,
+    deleteOrder,
+    getAllOrders
 }
 
 

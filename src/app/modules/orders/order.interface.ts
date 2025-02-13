@@ -79,9 +79,26 @@ export interface IComment {
     };
 }
 
-
 export interface CreateTasksInput {
     uniqueServices: Set<Types.ObjectId>;
     orderId: Types.ObjectId;
+}
+
+export interface ISchedule {
+    date: Date;
+    start_time: string;
+    end_time: string;
+}
+
+
+export interface GetAllOrderQuery extends Record<string, unknown> {
+    searchTerm?: string;
+    category?: string;
+    page?: string;
+    limit?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    fields?: string;
+    status?: string
 }
 

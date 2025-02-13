@@ -77,30 +77,38 @@ const createService = async (payload: IService, files: Express.Multer.File[]) =>
 
 const updateService = async (
   serviceId: string,
-  payload: Partial<IService>,
+  payload: any,
   files?: Express.Multer.File[]
 ) => {
   if (!Types.ObjectId.isValid(serviceId)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid service ID");
   }
+  console.log("===Payload===", payload);
+
+
 
   const existingService = await Service.findById(serviceId);
   if (!existingService) {
     throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
   }
 
-  if (payload.category && !Types.ObjectId.isValid(payload.category)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid category ID");
+  // if (payload.category && !Types.ObjectId.isValid(payload.category)) {
+  //   throw new ApiError(httpStatus.BAD_REQUEST, "Invalid category ID");
+  // }
+
+  if (Array.isArray(files) && files.length > 0) {
+    const newData = files.map((file) => file.path);
+    console.log("newData", newData)
+    payload.service_image = [...(payload.service_image || []), ...newData];
   }
 
-  if (files && files.length > 0) {
-    payload.service_image = files.map((file) => file.path);
-  }
+  console.log("===service_image===", payload);
 
   const updatedService = await Service.findByIdAndUpdate(serviceId, payload, {
     new: true,
     runValidators: true,
   });
+
 
   if (!updatedService) {
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update service");
