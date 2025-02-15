@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchasync";
 import sendResponse from "../../../shared/sendResponse";
-import { GetAllOrderQuery, IOrder, ISchedule } from "./order.interface";
+import { GetAllOrderQuery, INotes, IOrder, ISchedule } from "./order.interface";
 import { OrdersService } from "./order.service";
 import { Types } from "mongoose";
+import { IReqUser } from "../auth/auth.interface";
 
 
 const getAllOrders = catchAsync(async (req: Request, res: Response) => {
@@ -74,6 +75,34 @@ const deleteOrder = catchAsync(async (req: Request, res: Response) => {
     });
 })
 
+const getOrderServices = catchAsync(async (req: Request, res: Response) => {
+    const orderId = req.query.orderId as string;
+    const clientId = req.query.clientId as string;
+
+    const result = await OrdersService.getOrderServices(orderId, clientId);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get services successfully",
+        data: result,
+    });
+});
+
+const addOrderNotes = catchAsync(async (req: Request, res: Response) => {
+    const orderId = req.params.orderId as string;
+    const body = req.body as INotes;
+    const user = req.user as IReqUser;
+
+    const result = await OrdersService.addOrderNotes(orderId, body, user);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Add notes successfully",
+        data: result,
+    });
+});
 
 export const OrdersController = {
     createNewOrder,
@@ -81,5 +110,7 @@ export const OrdersController = {
     editServicesOfOrder,
     setScheduledTime,
     deleteOrder,
-    getAllOrders
+    getAllOrders,
+    getOrderServices,
+    addOrderNotes
 }

@@ -90,7 +90,6 @@ export interface ISchedule {
     end_time: string;
 }
 
-
 export interface GetAllOrderQuery extends Record<string, unknown> {
     searchTerm?: string;
     category?: string;
@@ -102,3 +101,8 @@ export interface GetAllOrderQuery extends Record<string, unknown> {
     status?: string
 }
 
+export interface INotes {
+    text?: string;
+    memberId?: Types.ObjectId;
+    date?: Date;
+}

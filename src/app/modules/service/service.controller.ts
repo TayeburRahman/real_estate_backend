@@ -5,6 +5,7 @@ import { ServiceService } from "./service.service";
 import { GetAllGetQuery, IPackage, IPricingGroup, IService, IServiceCategory } from "./service.interface";
 import ApiError from "../../../errors/ApiError";
 import httpStatus from "http-status";
+import { Types } from "mongoose";
 
 const createServiceCategory = catchAsync(async (req: Request, res: Response) => {
   const body = req.body as IServiceCategory;
@@ -241,7 +242,21 @@ const getAllServicesWithoutPagination = catchAsync(async (req: Request, res: Res
     data: result,
   });
 });
+// =======================
+const getClientServices = catchAsync(async (req: Request, res: Response) => {
+  const searchTerm = req.query.searchTerm ? String(req.query.searchTerm) : '';
+  const categoryId = req.query.categoryId ? String(req.query.categoryId) : '';
+  const clientId = req.params.clientId as string;
 
+  const result = await ServiceService.getClientServices(searchTerm, clientId, categoryId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get services successfully",
+    data: result,
+  });
+});
 
 
 
@@ -268,6 +283,7 @@ export const ServiceController = {
   getAllGroupPrice,
   getAllGroupPriceDetails,
   getAllClients,
-  getAllServicesWithoutPagination
+  getAllServicesWithoutPagination,
+  getClientServices
 
 };

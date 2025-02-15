@@ -1,10 +1,11 @@
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { Orders, Tasks } from "./order.model";
-import { CreateTasksInput, GetAllOrderQuery, ICoordinates, IOrder, ISchedule } from "./order.interface";
+import { CreateTasksInput, GetAllOrderQuery, ICoordinates, INotes, IOrder, ISchedule } from "./order.interface";
 import { Types } from "mongoose";
-import { Package } from "../service/service.model";
+import { Package, PricingGroup } from "../service/service.model";
 import QueryBuilder from "../../../builder/QueryBuilder";
+import { IReqUser } from "../auth/auth.interface";
 
 
 const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => {
@@ -18,7 +19,7 @@ const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => 
             state: "FL"
         };
         payload.locations = { coordinates: [-77.0369, 38.8075] } as ICoordinates;
-        payload.serviceIds = [new Types.ObjectId("67a1fe35566b3ace1712af1c"), new Types.ObjectId("67a20593adf11bd2f5cc53fb")];
+        payload.serviceIds = [new Types.ObjectId("67ad7c72e91fd1ddd9198d46"), new Types.ObjectId("67ad7ca9e91fd1ddd9198d4a")];
         payload.packageIds = [new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b")];
         payload.linkedAgents = [new Types.ObjectId("67a2ec5e4400b9bc11304e8c")];
         payload.contactInfo = {
@@ -248,6 +249,76 @@ const getAllOrders = async (query: GetAllOrderQuery) => {
     };
 }
 
+const getOrderServices = async (orderId: string, clientId: string) => {
+    if (!orderId) {
+        throw new ApiError(404, 'Invalid Order ID');
+    }
+
+    let order = await Orders.findById(orderId)
+        .select('packageIds _id serviceIds totalAmount')
+        .populate({
+            path: 'packageIds',
+            populate: {
+                path: 'services',
+                select: "title _id"
+            },
+        })
+        .populate({
+            path: 'serviceIds',
+            select: "title _id price"
+        })
+        .lean();
+
+    if (!order) {
+        throw new ApiError(404, 'Order not found');
+    }
+
+    if (order.serviceIds?.length) {
+        const groups = await PricingGroup.find({ clients: clientId }).lean();
+        // @ts-ignore
+        order.serviceIds = order.serviceIds.map((service) => {
+            const matchedGroup = groups.find(group =>
+                group.services.some(s => s.serviceId.toString() === service._id.toString())
+            );
+
+            if (matchedGroup) {
+                const specialService = matchedGroup.services.find(s => s.serviceId.toString() === service._id.toString());
+
+                if (specialService && typeof specialService.special_price !== "undefined" && specialService.special_price !== null) {
+                    return { ...service, price: specialService.special_price };
+                }
+            }
+            return service;
+        });
+    }
+
+    return order;
+};
+
+const addOrderNotes = async (orderId: string, payload: INotes, user: IReqUser) => {
+    if (!orderId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid order ID");
+    }
+
+    const data = {
+        text: payload.text,
+        memberId: user.userId,
+        date: new Date()
+    }
+
+    const result = await Orders.findByIdAndUpdate(
+        orderId,
+        { $push: { notes: data } },
+        { new: true }
+    );
+
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    }
+
+    return result;
+}
+
 
 
 
@@ -257,7 +328,9 @@ export const OrdersService = {
     editServicesOfOrder,
     setScheduledTime,
     deleteOrder,
-    getAllOrders
+    getAllOrders,
+    getOrderServices,
+    addOrderNotes
 }
 
 

@@ -5,6 +5,7 @@ import { GetAllGetQuery, IPackage, IPricingGroup, IService } from './service.int
 import { Types } from 'mongoose';
 import QueryBuilder from '../../../builder/QueryBuilder';
 import Client from '../client/client.model';
+import { Orders } from '../orders/order.model';
 
 const createServiceCategory = async (payload: { name: string }) => {
   const { name } = payload;
@@ -156,9 +157,9 @@ const getAllServices = async (query: GetAllGetQuery) => {
 
 // =======================
 const createPackages = async (payload: IPackage, files: Express.Multer.File[]) => {
-  //@ts-ignore
-  payload.services = Array(payload.services);
+
   const { services, name, price, descriptions } = payload;
+  console.log("fhdhgvjfdh", services)
 
   if (!services || !name || !price || !descriptions) {
     throw new ApiError(httpStatus.BAD_REQUEST, "All fields are required!");
@@ -187,7 +188,8 @@ const updatePackage = async (
 ) => {
 
   //@ts-ignore
-  payload.services = Array(payload.services);
+  // payload.services = Array(payload.services);
+  console.log("=========", payload)
 
   if (!Types.ObjectId.isValid(packageId)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid package ID");
@@ -202,14 +204,22 @@ const updatePackage = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid package ID(s)");
   }
 
-  if (files && files.length > 0) {
-    payload.package_image = files.map((file) => file.path);
+  // if (files && files.length > 0) {
+  //   payload.package_image = files.map((file) => file.path);
+  // }
+
+  if (Array.isArray(files) && files.length > 0) {
+    const newData = files.map((file) => file.path);
+    payload.package_image = [...(payload.package_image || []), ...newData];
   }
+  console.log("=payload=:", payload)
 
   const updatedPackage = await Package.findByIdAndUpdate(packageId, payload, {
     new: true,
     runValidators: true,
   });
+
+  console.log("==:", updatedPackage)
 
   if (!updatedPackage) {
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update package");
@@ -387,7 +397,7 @@ const getAllGroupPriceDetails = async (groupId: string) => {
 
   return result
 };
-
+// ======================================
 const getAllClients = async (searchTerm: string) => {
   const filter = searchTerm ? { name: { $regex: searchTerm, $options: 'i' } } : {};
 
@@ -396,6 +406,7 @@ const getAllClients = async (searchTerm: string) => {
 
   return result
 };
+
 const getAllServicesWithoutPagination = async (searchTerm: string) => {
   const filter = searchTerm ? { name: { $regex: searchTerm, $options: 'i' } } : {};
 
@@ -404,8 +415,36 @@ const getAllServicesWithoutPagination = async (searchTerm: string) => {
 
   return result
 };
+// ====================================
+const getClientServices = async (searchTerm: string, clientId: string, categoryId: string) => {
+  const filter = searchTerm ? { title: { $regex: searchTerm, $options: 'i' } } : {};
 
+  if (categoryId) {
+    // @ts-ignore
+    filter.category = categoryId;
+  }
 
+  const services = await Service.find(filter).lean();
+
+  const groups = await PricingGroup.find({ clients: clientId }).lean();
+
+  const updatedServices = services.map(service => {
+    const matchedGroup = groups.find(group =>
+      group.services.some(s => s.serviceId.toString() === service._id.toString())
+    );
+
+    if (matchedGroup) {
+      const specialService = matchedGroup.services.find(s => s.serviceId.toString() === service._id.toString());
+      if (specialService && specialService.special_price !== null) {
+        return { ...service, price: specialService.special_price };
+      }
+    }
+
+    return service;
+  });
+
+  return updatedServices;
+};
 
 
 export const ServiceService = {
@@ -430,6 +469,8 @@ export const ServiceService = {
   getAllGroupPrice,
   getAllGroupPriceDetails,
   getAllClients,
-  getAllServicesWithoutPagination
+  getAllServicesWithoutPagination,
+  // ====================
+  getClientServices,
 };
 

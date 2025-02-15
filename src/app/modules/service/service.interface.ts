@@ -18,6 +18,7 @@ export interface IPackage {
   price: number;
   descriptions: string;
   package_image: string[];
+  existingImages: string[]
 }
 
 export interface IPricingGroup {

@@ -43,6 +43,8 @@ router.get("/price-group-details/:id", ServiceController.getAllGroupPriceDetails
 
 router.get("/get-all-client", ServiceController.getAllClients);
 router.get("/get-all-service", ServiceController.getAllServicesWithoutPagination);
+// ==================================
+router.get("/get-client-service/:clientId", ServiceController.getClientServices);
 
 
 
