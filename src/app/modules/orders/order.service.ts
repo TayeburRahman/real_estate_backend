@@ -4,28 +4,37 @@ import { Orders, Tasks } from "./order.model";
 import { CreateTasksInput, GetAllOrderQuery, ICoordinates, INotes, IOrder, ISchedule } from "./order.interface";
 import { Types } from "mongoose";
 import { Package, PricingGroup } from "../service/service.model";
-import QueryBuilder from "../../../builder/QueryBuilder";
 import { IReqUser } from "../auth/auth.interface";
 
 
 const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => {
     try {
         // Set default address and location
-        payload.address = {
-            zipCode: "33101",
-            streetName: "Example Street",
-            streetAddress: "123 Main St",
-            city: "Miami",
-            state: "FL"
-        };
-        payload.locations = { coordinates: [-77.0369, 38.8075] } as ICoordinates;
-        payload.serviceIds = [new Types.ObjectId("67ad7c72e91fd1ddd9198d46"), new Types.ObjectId("67ad7ca9e91fd1ddd9198d4a")];
-        payload.packageIds = [new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b")];
-        payload.linkedAgents = [new Types.ObjectId("67a2ec5e4400b9bc11304e8c")];
-        payload.contactInfo = {
-            name1: "John Doe", email1: "john.doe@example.com", phone1: "555-123-4567",
-            name2: "Jane Smith", email2: "jane.smith@example.com", phone2: "555-987-6543"
-        };
+        // payload.address = {
+        //     zipCode: "33101",
+        //     streetName: "Example Street",
+        //     streetAddress: "123 Main St",
+        //     city: "Miami",
+        //     state: "FL"
+        // };
+        // payload.locations = { coordinates: [-77.0369, 38.8075] } as ICoordinates;
+        // payload.serviceIds = [new Types.ObjectId("67ad7c72e91fd1ddd9198d46"), new Types.ObjectId("67ad7ca9e91fd1ddd9198d4a")];
+        // payload.packageIds = [new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b"), new Types.ObjectId("67a2ec5e4400b9bc11304e8b")];
+        // payload.linkedAgents = [new Types.ObjectId("67a2ec5e4400b9bc11304e8c")];
+        // payload.contactInfo = {
+        //     name1: "John Doe", email1: "john.doe@example.com", phone1: "555-123-4567",
+        //     name2: "Jane Smith", email2: "jane.smith@example.com", phone2: "555-987-6543"
+        // };
+
+        const { locations } = payload as any;
+        if (!locations.lng || !locations.lat) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Location coordinates are required.");
+        }
+
+        payload.locations = {
+            type: 'Point',
+            coordinates: [locations.lng, locations.lat],
+        } as ICoordinates;
 
         // Handle file uploads
         if (files?.length) {
@@ -231,23 +240,86 @@ const deleteOrder = async (orderId: Types.ObjectId) => {
 }
 
 const getAllOrders = async (query: GetAllOrderQuery) => {
-    const userQuery = new QueryBuilder(Orders.find()
-        .populate({ path: "clientId", select: "name profile_image" })
-        , query)
-        .search(["clientId.name"])
-        .filter()
-        .sort()
-        .paginate()
-        .fields();
+    const { searchTerm, status, paymentStatus, page = 1, limit = 10 } = query;
 
-    const result = await userQuery.modelQuery;
-    const meta = await userQuery.countTotal();
+    const matchStage: any = {};
+
+    if (status) {
+        matchStage["status"] = status;
+    }
+
+    if (paymentStatus) {
+        matchStage["paymentStatus"] = paymentStatus;
+    }
+
+    if (searchTerm) {
+        matchStage["client.name"] = { $regex: searchTerm, $options: "i" };
+    }
+
+    const orders = await Orders.aggregate([
+        {
+            $lookup: {
+                from: "clients",
+                localField: "clientId",
+                foreignField: "_id",
+                as: "client"
+            }
+        },
+        { $unwind: "$client" },
+        { $match: matchStage },
+        {
+            $project: {
+                _id: 1,
+                orderDate: "$createdAt",
+                "client.name": 1,
+                "client.profile_image": 1,
+                "address.streetAddress": 1,
+                "address.city": 1,
+                "address.state": 1,
+                servicesCount: { $size: "$serviceIds" },
+                totalAmount: 1,
+                appointment: {
+                    $concat: [
+                        { $dateToString: { format: "%m/%d/%Y", date: "$schedule.date" } }, // Fixed format
+                        " at ",
+                        "$schedule.start_time"
+                    ]
+                },
+                status: 1,
+                paymentStatus: 1
+            }
+        },
+        // @ts-ignore
+        { $skip: (page - 1) * limit },
+        // @ts-ignore
+        { $limit: limit }
+    ]);
+
+    const totalCount = await Orders.aggregate([
+        {
+            $lookup: {
+                from: "clients",
+                localField: "clientId",
+                foreignField: "_id",
+                as: "client"
+            }
+        },
+        { $unwind: "$client" },
+        { $match: matchStage },
+        { $count: "total" }
+    ]);
 
     return {
-        meta,
-        data: result,
+        meta: {
+            total: totalCount[0]?.total || 0,
+            page,
+            limit,
+            // @ts-ignore
+            totalPages: Math.ceil((totalCount[0]?.total || 0) / limit),
+        },
+        data: orders
     };
-}
+};
 
 const getOrderServices = async (orderId: string, clientId: string) => {
     if (!orderId) {

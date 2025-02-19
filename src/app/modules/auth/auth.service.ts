@@ -17,6 +17,7 @@ import config from "../../../config";
 import Client from "../client/client.model";
 import Member from "../member/member.model";
 import { Types } from "mongoose";
+import { Multer } from "multer";
 
 
 interface ForgotPasswordPayload {
@@ -53,6 +54,10 @@ const registrationAccount = async (payload: IAuth) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already exists");
   }
 
+  if (role === ENUM_USER_ROLE.AGENT && !other.clientId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Client ID is required for Agent role!");
+  }
+
   // If the account exists but is not active, delete previous entries
   if (existingAuth && !existingAuth.isActive) {
     await Promise.all([
@@ -73,6 +78,8 @@ const registrationAccount = async (payload: IAuth) => {
     password,
     expirationTime: Date.now() + 3 * 60 * 1000,
     isActive: true,
+    phone_number: other.phone_number,
+    address: other.address
   };
 
   const createAuth = (await Auth.create(auth)) as IAuth;
@@ -83,7 +90,7 @@ const registrationAccount = async (payload: IAuth) => {
 
   other.authId = createAuth._id;
   other.email = email;
-
+  other.role = role;
   // Role-based user creation
   let result;
   if (role === ENUM_USER_ROLE.CLIENT || role === ENUM_USER_ROLE.AGENT) {
@@ -101,6 +108,85 @@ const registrationAccount = async (payload: IAuth) => {
   return { result, role, message: "Account created successfully!" };
 };
 
+const registrationUser = async (files: any, payload: IAuth) => {
+  const { role, password, confirmPassword, email, ...other } = payload;
+
+  if (!role || !Object.values(ENUM_USER_ROLE).includes(role as any)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Valid role is required!");
+  }
+  if (!password || !confirmPassword || !email) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email, Password, and Confirm Password are required!");
+  }
+  if (password !== confirmPassword) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Password and Confirm Password didn't match");
+  }
+
+  const existingAuth = await Auth.findOne({ email }).lean();
+
+  if (existingAuth?.isActive) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already exists");
+  }
+  if (role === ENUM_USER_ROLE.AGENT && !other.clientId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Client ID is required for Agent role!");
+  }
+
+  // If the account exists but is not active, delete previous entries
+  if (existingAuth && !existingAuth.isActive) {
+    await Promise.all([
+      (existingAuth.role === "CLIENT" || existingAuth.role === "AGENT") &&
+      Client.deleteOne({ authId: existingAuth._id }),
+      (existingAuth.role === "ADMIN" || existingAuth.role === "MEMBER" || existingAuth.role === "SUPER_ADMIN") &&
+      Member.deleteOne({ authId: existingAuth._id }),
+      Auth.deleteOne({ email }),
+    ]);
+  }
+
+  const { activationCode } = createActivationToken();
+  const auth = {
+    role,
+    name: other.name,
+    email,
+    activationCode,
+    password,
+    expirationTime: Date.now() + 3 * 60 * 1000,
+    isActive: true,
+    phone_number: other.phone_number,
+    address: other.address
+  };
+
+  const createAuth = (await Auth.create(auth)) as IAuth;
+
+  if (!createAuth) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to create auth account");
+  }
+
+  other.authId = createAuth._id;
+  other.email = email;
+  other.role = role;
+
+  if (files) {
+    if (files.profile_image && files.profile_image[0]) {
+      other.profile_image = `/images/profile/${files.profile_image[0].filename}`;
+    }
+  }
+
+
+  // Role-based user creation
+  let result;
+  if (role === ENUM_USER_ROLE.CLIENT || role === ENUM_USER_ROLE.AGENT) {
+    result = await Client.create(other);
+  } else if (
+    role === ENUM_USER_ROLE.ADMIN ||
+    role === ENUM_USER_ROLE.SUPER_ADMIN ||
+    role === ENUM_USER_ROLE.MEMBER
+  ) {
+    result = await Member.create(other);
+  } else {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid role provided!");
+  }
+
+  return { result, role, message: "Account created successfully!" };
+};
 
 // const activateAccount = async (payload: ActivationPayload) => {
 //   const { activation_code, userEmail } = payload;
@@ -547,6 +633,7 @@ const deleteMyAccount = async (payload: { authId: Types.ObjectId }) => {
 
 export const AuthService = {
   registrationAccount,
+  registrationUser,
   loginAccount,
   changePassword,
   forgotPass,

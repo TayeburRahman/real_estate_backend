@@ -25,6 +25,12 @@ const AuthSchema: Schema<IAuth> = new Schema(
       required: [true, "Password is required"],
       select: false,
     },
+    address: {
+      type: String,
+    },
+    phone_number: {
+      type: String,
+    },
     role: {
       type: String,
       enum: ["AGENT", "CLIENT", "MEMBER", "ADMIN", "SUPER_ADMIN"],

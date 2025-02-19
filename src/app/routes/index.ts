@@ -4,16 +4,30 @@ import { MessageRoutes } from '../modules/messages/message.routes';
 import { NotificationRoutes } from '../modules/notifications/notifications.routes';
 import { ServiceRoutes } from '../modules/service/service.routes';
 import { OrderRoutes } from '../modules/orders/order.routes';
+import { TaskRoutes } from '../modules/task/task.routes';
+import { ClientRoutes } from '../modules/client/client.routes';
+import { MemberRoutes } from '../modules/member/member.routes';
+import { ReportRoutes } from '../modules/report/report.routes';
 
 const router = express.Router();
 
 const moduleRoutes = [
-  // -- done
   {
     path: '/auth',
     route: AuthRoutes,
   },
-  // -- done
+  {
+    path: '/client',
+    route: ClientRoutes,
+  },
+  {
+    path: '/member',
+    route: MemberRoutes,
+  },
+  {
+    path: '/report',
+    route: ReportRoutes,
+  },
   {
     path: '/message',
     route: MessageRoutes,
@@ -31,6 +45,12 @@ const moduleRoutes = [
     path: '/orders',
     route: OrderRoutes,
   },
+  {
+    path: '/task',
+    route: TaskRoutes,
+  },
+
+
 
 
 ];

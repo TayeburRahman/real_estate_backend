@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-unused-vars */
-import { Document, Model } from 'mongoose';
+import { Document, Model, ObjectId, Types } from 'mongoose';
 export type IEmailOptions = {
   email: string;
   subject: string;
@@ -27,8 +27,8 @@ export type IActivationRequest = {
   activation_code: string;
 };
 export type IReqUser = {
-  userId: string;
-  authId: string;
+  userId: Types.ObjectId;
+  authId: Types.ObjectId;
   role: string;
 };
 
@@ -49,6 +49,8 @@ export type IAuth = Document & {
   is_block?: boolean;
   isActive?: boolean;
   confirmPassword: string;
+  address: string;
+  phone_number: string;
   [key: string]: any;
 };
 

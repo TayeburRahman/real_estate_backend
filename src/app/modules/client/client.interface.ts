@@ -17,5 +17,8 @@ export interface IClient extends Document {
   email_notifications: boolean;
   email_invoice: boolean;
   serviceId: mongoose.Types.ObjectId;
+  address: string | null;
+  role: string | null;
+  clientId: string | null;
   // location?: ILocation;
 }

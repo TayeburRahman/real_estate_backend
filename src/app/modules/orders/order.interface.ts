@@ -53,10 +53,13 @@ export interface IOrder {
 export interface ITasks {
     orderId: Types.ObjectId;
     serviceId: Types.ObjectId;
-    memberId: Types.ObjectId | null;
+    memberId: Types.ObjectId[] | null;
     sourceFile?: {
         url: string;
     }[];
+    createdAt: Date,
+    assigned: boolean
+    status: string;
     finishFile?: {
         url: string;
         comment?: {
@@ -71,6 +74,7 @@ export interface ITasks {
 export interface IComment {
     orderId: Types.ObjectId;
     fileId: Types.ObjectId;
+    taskId: Types.ObjectId;
     replayId: Types.ObjectId | null;
     comment: {
         text: string;

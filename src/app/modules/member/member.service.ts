@@ -3,6 +3,10 @@ import ApiError from '../../../errors/ApiError';
 import Auth from '../auth/auth.model';
 import { RequestData } from '../../../interfaces/common';
 import Member from './member.model';
+import { Types } from 'mongoose';
+import { GetAllGetQuery } from '../service/service.interface';
+import QueryBuilder from '../../../builder/QueryBuilder';
+import { IReqUser } from '../auth/auth.interface';
 
 const updateProfile = async (req: RequestData) => {
   const { files, body: data } = req;
@@ -42,7 +46,7 @@ const updateProfile = async (req: RequestData) => {
   return result;
 };
 
-const myProfile = async (user: { userId: string }) => {
+const myProfile = async (user: { userId: Types.ObjectId }) => {
   const userId = user.userId;
   const result = await Member.findById(userId).populate("authId");
   if (!result) {
@@ -57,8 +61,49 @@ const myProfile = async (user: { userId: string }) => {
   return result;
 };
 
+const getAllMembersWithOutPagination = async (query: GetAllGetQuery) => {
+  const { searchTerm } = query;
+
+  const filter: any = { role: "MEMBER" };
+
+  if (searchTerm) {
+    filter.$and = [
+      { role: "MEMBER" },
+      {
+        $or: [
+          { name: { $regex: searchTerm, $options: "i" } },
+          { email: { $regex: searchTerm, $options: "i" } },
+        ],
+      },
+    ];
+  }
+
+  const result = await Member.find(filter).select("name _id email role");
+  return result;
+};
+
+const getAllMembers = async (user: IReqUser, query: GetAllGetQuery) => {
+
+  const userQuery = new QueryBuilder(Member.find({ role: "MEMBER" }), query)
+    .search(["name", "email"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+
+
+  const result = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+
+  return { meta, result };
+};
+
+
+
 export const MemberService = {
   myProfile,
   updateProfile,
+  getAllMembersWithOutPagination,
+  getAllMembers
 };
 

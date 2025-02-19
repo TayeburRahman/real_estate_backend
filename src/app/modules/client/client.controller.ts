@@ -5,6 +5,16 @@ import { Request, RequestHandler, Response } from 'express';
 import { ClientService } from "./client.service";
 import { RequestData } from "../../../interfaces/common";
 
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const result = await ClientService.updateMyProfile(req as any);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Profile updated successfully",
+    data: result,
+  });
+});
+
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const result = await ClientService.updateProfile(req as any);
   sendResponse(res, {
@@ -25,8 +35,34 @@ const getProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+// ===============
+const getAllClients = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query;
+  const result = await ClientService.getAllClients(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+const getClientAgent = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query;
+  const result = await ClientService.getClientAgent(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+
+
 
 export const ClientController = {
   getProfile,
   updateProfile,
+  updateMyProfile,
+  getAllClients,
+  getClientAgent
 };

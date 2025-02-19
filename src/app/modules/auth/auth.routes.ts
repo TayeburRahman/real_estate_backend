@@ -9,6 +9,7 @@ import { ClientController } from '../client/client.controller';
 const router = express.Router();
 //------ Auth Route -----------------
 router.post("/register", AuthController.registrationAccount)
+router.post("/register-user", uploadFile(), AuthController.addClientAgents)
 router.post("/login", AuthController.loginAccount)
 // router.post("/activate-user", AuthController.activateAccount)
 router.post("/resend", AuthController.resendActivationCode)
@@ -38,8 +39,15 @@ router.patch(
   "/client/edit-profile",
   auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT),
   uploadFile(),
+  ClientController.updateMyProfile
+)
+router.patch(
+  "/client/edit-profile/userId/:userId/authId/:authId",
+  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT),
+  uploadFile(),
   ClientController.updateProfile
 )
+
 
 // //------ Admin Router ---------------
 router.get(

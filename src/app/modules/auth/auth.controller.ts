@@ -16,6 +16,16 @@ const registrationAccount = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const addClientAgents = catchAsync(async (req: Request, res: Response) => {
+  const file = req.files
+  const { role } = await AuthService.registrationUser(file, req.body);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Add account successfully!",
+    data: role,
+  });
+});
 // const activateAccount = catchAsync(async (req: Request, res: Response) => {
 //   const result = await AuthService.activateAccount(req.body);
 //   const { refreshToken } = result;
@@ -145,5 +155,6 @@ export const AuthController = {
   checkIsValidForgetActivationCode,
   resendCodeActivationAccount,
   resendCodeForgotAccount,
-  deleteMyAccount
+  deleteMyAccount,
+  addClientAgents
 };

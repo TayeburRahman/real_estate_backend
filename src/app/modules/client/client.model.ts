@@ -22,6 +22,15 @@ const ClientSchema = new Schema<IClient>(
       required: true,
       ref: 'Auth',
     },
+    role: {
+      type: String,
+      enum: ["AGENT", "CLIENT"],
+      required: true,
+    },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+    },
     name: {
       type: String,
       required: true,
@@ -37,6 +46,10 @@ const ClientSchema = new Schema<IClient>(
       trim: true,
     },
     phone_number: {
+      type: String,
+      default: null,
+    },
+    address: {
       type: String,
       default: null,
     },

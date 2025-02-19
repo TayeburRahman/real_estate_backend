@@ -13,7 +13,7 @@ export interface IMember extends Document {
   phone_number?: string | null;
   profile_image?: string | null;
   cover_image: string | null;
-  serviceId: mongoose.Types.ObjectId;
+  serviceId: mongoose.Types.ObjectId[];
   view_assigned_order: boolean | null;
   view_all_order: boolean | null;
   place_on_order_for_client: boolean | null;
@@ -21,5 +21,7 @@ export interface IMember extends Document {
   see_the_pricing: boolean | null;
   edit_order: boolean | null;
   status?: 'pending' | 'approved' | 'declined';
+  role: string | null;
+  roleOfName: string | null;
   // location?: ILocation;
 }

@@ -4,6 +4,7 @@ import { IReqUser } from "../auth/auth.interface";
 import { Request, RequestHandler, Response } from 'express';
 import { MemberService } from "./member.service";
 import { RequestData } from "../../../interfaces/common";
+import { GetAllGetQuery } from "../service/service.interface";
 
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const result = await MemberService.updateProfile(req as any);
@@ -26,8 +27,33 @@ const myProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllMembersWithOutPagination = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as GetAllGetQuery;
+  const result = await MemberService.getAllMembersWithOutPagination(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+
+const getAllMembers = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as GetAllGetQuery;
+  const user = req.user as IReqUser;
+  const result = await MemberService.getAllMembers(user, query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+
 
 export const MemberController = {
   myProfile,
   updateProfile,
+  getAllMembersWithOutPagination,
+  getAllMembers
 };

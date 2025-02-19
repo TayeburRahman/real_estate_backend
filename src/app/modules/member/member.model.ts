@@ -21,6 +21,14 @@ const MemberSchema = new Schema<IMember>(
       required: true,
       ref: 'Auth',
     },
+    role: {
+      type: String,
+      enum: ["MEMBER", "ADMIN", "SUPER_ADMIN"],
+      required: true,
+    },
+    roleOfName: {
+      type: String,
+    },
     name: {
       type: String,
       required: true,
@@ -33,7 +41,8 @@ const MemberSchema = new Schema<IMember>(
       trim: true,
     },
     serviceId: {
-      type: Schema.Types.ObjectId,
+      type: [Schema.Types.ObjectId],
+      ref: 'Service',
     },
     phone_number: {
       type: String,

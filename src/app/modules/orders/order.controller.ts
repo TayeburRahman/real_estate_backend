@@ -18,8 +18,11 @@ const getAllOrders = catchAsync(async (req: Request, res: Response) => {
     });
 });
 const createNewOrder = catchAsync(async (req: Request, res: Response) => {
-    const body = req.body as IOrder;
-    const result = await OrdersService.createNewOrder(body as IOrder, req.files as Express.Multer.File[]);
+    const body = req.body as any;
+    console.log("body-all", body.data)
+    const data = JSON.parse(body.data) as IOrder;
+    console.log("data-all", data)
+    const result = await OrdersService.createNewOrder(data as IOrder, req.files as Express.Multer.File[]);
     sendResponse(res, {
         statusCode: 200,
         success: true,
