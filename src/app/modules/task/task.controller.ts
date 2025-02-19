@@ -124,6 +124,17 @@ const addCommentOfTaskFiles = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
+const updateStatusTask = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as { status: string, taskId: string };
+  const result = await TaskService.updateStatusTask(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Status Update Successfully`,
+    data: result,
+  });
+});
+
 export const TaskController = {
   getAllTasks,
   assignTeamMember,
@@ -134,5 +145,6 @@ export const TaskController = {
   viewTaskDetails,
   addSourceFileOfTask,
   addFinishFileOfTask,
-  addCommentOfTaskFiles
+  addCommentOfTaskFiles,
+  updateStatusTask
 };

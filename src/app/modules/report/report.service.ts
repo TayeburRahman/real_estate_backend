@@ -4,30 +4,10 @@ import { Orders } from "../orders/order.model";
 import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import Client from "../client/client.model";
-interface IOrder {
-    _id: Types.ObjectId;
-    serviceIds: Types.ObjectId[];
-    packageIds: Types.ObjectId[];
-    clientId: Types.ObjectId;
-    totalAmount: number;
-}
+import { IClient, IOrder, IPackage, IService } from "./report.interface";
+import Member from "../member/member.model";
+import { IMember } from "../member/member.interface";
 
-interface IService {
-    _id: Types.ObjectId;
-    title: string;
-}
-
-interface IPackage {
-    _id: Types.ObjectId;
-    name: string;
-}
-
-interface IClient {
-    _id: Types.ObjectId;
-    name: string;
-    phoneNumber: string;
-    address: string;
-}
 
 const getOrderServices = async () => {
     try {
@@ -90,7 +70,6 @@ const getOrderClientReports = async () => {
         const clientReports = clients.map((client) => {
             const clientOrders = orders.filter((order) => order.clientId.toString() === client._id.toString());
 
-
             const totalOrders = clientOrders.length;
             const totalRevenue = clientOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
@@ -109,11 +88,39 @@ const getOrderClientReports = async () => {
     }
 };
 
+const getTeamMemberReports = async () => {
+    try {
+        const members: IMember[] = await Member.find({});
 
+        const orders: any[] = await Orders.find({}, "schedule totalAmount");
+
+        const memberReports = members.map((member: any) => {
+            const memberOrders = orders.filter((order) =>
+                order.schedule.memberId.some((id: any) => id.toString() === member._id.toString())
+            );
+            const totalAppointments = memberOrders.length;
+
+            return {
+                memberId: member._id,
+                name: member.name,
+                role: member.roleOfName || member.role,
+                email: member.email,
+                phoneNumber: member.phone_number,
+                totalAppointments,
+            };
+        });
+
+        return memberReports;
+    } catch (error) {
+        console.error(error);
+        throw new ApiError(404, "Failed to fetch team member reports");
+    }
+};
 
 
 export const ReportService = {
     getOrderServices,
     getOrderPackages,
-    getOrderClientReports
+    getOrderClientReports,
+    getTeamMemberReports
 }

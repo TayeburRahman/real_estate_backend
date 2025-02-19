@@ -41,9 +41,25 @@ const getOrderClientReports = catchAsync(async (req: Request, res: Response) => 
     });
 });
 
+const getTeamMemberReports = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await ReportService.getTeamMemberReports();
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get team member reports successfully",
+        data: result,
+    });
+});
+
+
+
+
 
 export const ReportController = {
     getOrderServices,
     getOrderPackages,
-    getOrderClientReports
+    getOrderClientReports,
+    getTeamMemberReports
 }

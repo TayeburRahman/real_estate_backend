@@ -56,6 +56,40 @@ const getClientAgent = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+// =client site====================================
+const getUpcomingAppointment = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as any;
+  const result = await ClientService.getUpcomingAppointment(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+
+const getRecentDeliverOrder = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as any;
+  const result = await ClientService.getRecentDeliverOrder(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
+
+
+const getClientOrder = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as any;
+  const result = await ClientService.getClientOrder(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
 
 
 
@@ -64,5 +98,8 @@ export const ClientController = {
   updateProfile,
   updateMyProfile,
   getAllClients,
-  getClientAgent
+  getClientAgent,
+  getUpcomingAppointment,
+  getRecentDeliverOrder,
+  getClientOrder
 };

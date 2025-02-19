@@ -313,7 +313,7 @@ const forgotPass = async (payload: { email: string }) => {
     { _id: 1, role: 1, email: 1, name: 1 }
   ) as IAuth;
 
-  if (!user.email) {
+  if (!user?.email) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User does not found!");
   }
 

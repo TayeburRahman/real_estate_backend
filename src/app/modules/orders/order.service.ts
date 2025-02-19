@@ -5,9 +5,10 @@ import { CreateTasksInput, GetAllOrderQuery, ICoordinates, INotes, IOrder, ISche
 import { Types } from "mongoose";
 import { Package, PricingGroup } from "../service/service.model";
 import { IReqUser } from "../auth/auth.interface";
+import { ENUM_USER_ROLE } from "../../../enums/user";
 
 
-const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => {
+const createNewOrder = async (user: IReqUser, payload: IOrder, files: Express.Multer.File[]) => {
     try {
         // Set default address and location
         // payload.address = {
@@ -35,7 +36,13 @@ const createNewOrder = async (payload: IOrder, files: Express.Multer.File[]) => 
             type: 'Point',
             coordinates: [locations.lng, locations.lat],
         } as ICoordinates;
-
+        const userType = user.role === ENUM_USER_ROLE.ADMIN ||
+            user.role === ENUM_USER_ROLE.MEMBER ||
+            user.role === ENUM_USER_ROLE.SUPER_ADMIN ? "Member" : "Client";
+        payload.orderPlaced = {
+            userId: user.userId,
+            userType: userType,
+        }
         // Handle file uploads
         if (files?.length) {
             payload.uploadFiles = files.map(file => file.path);
@@ -212,7 +219,7 @@ const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => 
     if (!order) {
         throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
     }
-    const { date, start_time, end_time } = payload;
+    const { date, start_time, end_time, memberId } = payload;
     const scheduleDate = new Date(date);
 
     const result = await Orders.findByIdAndUpdate(orderId, {
@@ -221,6 +228,7 @@ const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => 
                 date: scheduleDate,
                 start_time,
                 end_time,
+                memberId: memberId
             },
         },
     }, { new: true })
@@ -391,8 +399,42 @@ const addOrderNotes = async (orderId: string, payload: INotes, user: IReqUser) =
     return result;
 }
 
+const getSignalOrder = async (orderId: string) => {
+    if (!orderId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid order ID");
+    }
 
+    const result = await Orders.findById(orderId)
+        .populate('clientId packageIds serviceIds linkedAgents')
+        .populate({
+            path: 'taskIds',
+            select: 'name status serviceId ',
+            populate: {
+                path: 'serviceId finishFile',
+                select: '_id title'
+            }
+        })
+        .populate({
+            path: 'orderPlaced',
+            populate: {
+                path: 'userId',
+                select: '_id name profile_image role'
+            }
+        })
+        .populate({
+            path: 'notes',
+            populate: {
+                path: 'memberId',
+                select: '_id name profile_image role'
+            }
+        })
 
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    }
+
+    return result;
+}
 
 export const OrdersService = {
     createNewOrder,
@@ -402,7 +444,8 @@ export const OrdersService = {
     deleteOrder,
     getAllOrders,
     getOrderServices,
-    addOrderNotes
+    addOrderNotes,
+    getSignalOrder
 }
 
 

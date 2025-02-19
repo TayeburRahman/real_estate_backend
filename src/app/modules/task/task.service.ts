@@ -3,7 +3,7 @@ import ApiError from '../../../errors/ApiError';
 import mongoose, { Types } from 'mongoose';
 import { Comment, Orders, Tasks } from '../orders/order.model';
 import { IReqUser } from '../auth/auth.interface';
-import { ENUM_USER_ROLE } from '../../../enums/user';
+import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from '../../../enums/user';
 import { ITasks } from '../orders/order.interface';
 import { ICommentData } from './task.interface';
 
@@ -178,7 +178,6 @@ const getAllAssigned = async (user: IReqUser) => {
   return result;
 };
 
-
 const completeTaskUpdateStatus = async (taskId: string) => {
   const task = await Tasks.findById(taskId);
   if (!task) {
@@ -193,7 +192,6 @@ const completeTaskUpdateStatus = async (taskId: string) => {
   await task.save();
   return task.status;
 };
-
 
 const rejectTask = async (taskId: string, user: IReqUser, payload: any) => {
   const { memberId, reason } = payload || {};
@@ -265,7 +263,10 @@ const addFinishFileOfTask = async (files: Express.Multer.File[], taskId: string)
   return task;
 };
 
-const addCommentOfTaskFiles = async (user: IReqUser, query: { taskId: string, fileId: string, replayId: string }, payload: { text: string }) => {
+const addCommentOfTaskFiles = async (
+  user: IReqUser,
+  query: { taskId: string, fileId: string, replayId: string },
+  payload: { text: string }) => {
   const { taskId, fileId, replayId } = query;
   if (!taskId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Task ID is required");
@@ -274,7 +275,9 @@ const addCommentOfTaskFiles = async (user: IReqUser, query: { taskId: string, fi
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
   }
-
+  const userType = user.role === ENUM_USER_ROLE.ADMIN ||
+    user.role === ENUM_USER_ROLE.MEMBER ||
+    user.role === ENUM_USER_ROLE.SUPER_ADMIN ? "Member" : "Client";
   const data: ICommentData = {
     taskId,
     fileId: fileId || null,
@@ -282,7 +285,7 @@ const addCommentOfTaskFiles = async (user: IReqUser, query: { taskId: string, fi
     comment: {
       text: payload.text,
       userId: user.userId,
-      userType: user.role as ENUM_USER_ROLE,
+      userType: userType,
     },
   };
 
@@ -292,11 +295,26 @@ const addCommentOfTaskFiles = async (user: IReqUser, query: { taskId: string, fi
   if (!data.fileId) {
     delete data.fileId;
   }
-
   const result = await Comment.create(data)
-
   return result;
 };
+
+const updateStatusTask = async (query: { status: string; taskId: string }) => {
+  const task = await Tasks.findById(query.taskId);
+  if (!task) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
+  }
+
+  if (!Object.values(ENUM_TASK_STATUS).includes(query.status as ENUM_TASK_STATUS)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid task status");
+  }
+
+  task.status = query.status as ENUM_TASK_STATUS;
+  await task.save();
+
+  return task.status;
+};
+
 
 export const TaskService = {
   getAllTasks,
@@ -308,6 +326,8 @@ export const TaskService = {
   viewTaskDetails,
   addSourceFileOfTask,
   addFinishFileOfTask,
-  addCommentOfTaskFiles
+  addCommentOfTaskFiles,
+  updateStatusTask,
+
 };
 

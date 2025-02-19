@@ -18,3 +18,13 @@ export enum ENUM_SOCKET_EVENT {
   PARTNER_LOCATION = "partner-location",
 
 };
+
+
+export enum ENUM_TASK_STATUS {
+  SUBMITTED = "Submitted",
+  SCHEDULED = "Scheduled",
+  IN_PRODUCTION = "In-Production",
+  DELIVERED = "Delivered",
+  REVISIONS = "Revisions",
+  COMPLETED = "Completed"
+}

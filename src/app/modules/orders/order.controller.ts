@@ -19,10 +19,10 @@ const getAllOrders = catchAsync(async (req: Request, res: Response) => {
 });
 const createNewOrder = catchAsync(async (req: Request, res: Response) => {
     const body = req.body as any;
-    console.log("body-all", body.data)
     const data = JSON.parse(body.data) as IOrder;
-    console.log("data-all", data)
-    const result = await OrdersService.createNewOrder(data as IOrder, req.files as Express.Multer.File[]);
+    // console.log("data-all", data)
+    const user = req.user;
+    const result = await OrdersService.createNewOrder(user as IReqUser, data as IOrder, req.files as Express.Multer.File[]);
     sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -107,6 +107,21 @@ const addOrderNotes = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getSignalOrder = catchAsync(async (req: Request, res: Response) => {
+    const orderId = req.params.orderId as string;
+
+    const result = await OrdersService.getSignalOrder(orderId);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get successfully",
+        data: result,
+    });
+});
+
+
+
 export const OrdersController = {
     createNewOrder,
     updateOrder,
@@ -115,5 +130,6 @@ export const OrdersController = {
     deleteOrder,
     getAllOrders,
     getOrderServices,
-    addOrderNotes
+    addOrderNotes,
+    getSignalOrder
 }

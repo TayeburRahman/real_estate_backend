@@ -1,6 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import { IComment, ICoordinates, IOrder, ITasks } from './order.interface';
-import { ENUM_USER_ROLE } from '../../../enums/user';
+import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from '../../../enums/user';
 
 const Coordinates = new Schema<ICoordinates>({
     type: {
@@ -37,6 +37,19 @@ const orderSchema = new Schema<IOrder>(
             ref: 'Service',
             default: [],
         },
+        orderPlaced: {
+            type: {
+                userId: { type: Types.ObjectId, refPath: 'orderPlaced.userType', required: true },
+                userType: { type: String, enum: ['Member', 'Client'], required: true }
+            },
+            required: true
+        },
+        schedule: {
+            date: { type: Date },
+            start_time: { type: String },
+            end_time: { type: String },
+            memberId: [{ type: Types.ObjectId, ref: 'Member' }],
+        },
         totalAmount: { type: Number, required: true },
         locations: Coordinates,
         address: {
@@ -59,7 +72,7 @@ const orderSchema = new Schema<IOrder>(
         },
         linkedAgents: {
             type: [Types.ObjectId],
-            ref: 'Agent',
+            ref: 'Client',
             default: [],
         },
         uploadFiles: {
@@ -72,13 +85,6 @@ const orderSchema = new Schema<IOrder>(
             memberId: { type: Types.ObjectId, ref: 'Member' },
             date: { type: Date, default: Date.now },
         }],
-        schedule: {
-            date: { type: Date },
-            start_time: { type: String },
-            end_time: { type: String },
-            memberId: [{ type: Types.ObjectId, ref: 'Member' }],
-        },
-
         taskIds: {
             type: [Schema.Types.ObjectId],
             default: null,
@@ -87,14 +93,10 @@ const orderSchema = new Schema<IOrder>(
         status: {
             type: String,
             enum: [
-                'Submitted',
-                'Scheduled',
-                'In-Production',
-                'Delivered',
-                'Revisions',
+                'Progress',
                 'Completed',
             ],
-            default: 'Submitted',
+            default: 'Progress',
         },
         paymentStatus: {
             type: String,
@@ -115,7 +117,7 @@ const taskSchema = new Schema<ITasks>({
     },
     serviceId: {
         type: Schema.Types.ObjectId,
-        ref: 'Order',
+        ref: 'Service',
         required: true,
     },
     memberId: {
@@ -146,9 +148,9 @@ const taskSchema = new Schema<ITasks>({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Completed', 'Revision'],
-        default: 'Pending'
-    }
+        enum: ENUM_TASK_STATUS,
+        default: 'Submitted',
+    },
 }, { timestamps: true });
 
 const commentSchema = new Schema<IComment>({
@@ -171,12 +173,12 @@ const commentSchema = new Schema<IComment>({
         },
         userId: {
             type: Types.ObjectId,
-            refPath: 'userType',
+            refPath: 'comment.userType',
             required: true,
         },
         userType: {
             type: String,
-            enum: ENUM_USER_ROLE,
+            enum: ['Member', 'Client'],
             required: true,
         }
     }

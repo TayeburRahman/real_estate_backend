@@ -37,11 +37,9 @@ router.patch("/add-finished-file/:taskId",
 router.patch("/add-comment",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.addCommentOfTaskFiles);
-
-
-
-
-
+router.patch("/update-status",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.updateStatusTask);
 
 
 export const TaskRoutes = router;

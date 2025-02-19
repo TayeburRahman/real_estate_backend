@@ -5,10 +5,16 @@ export type ICoordinates = {
     coordinates: [number, number];
 };
 
+
+
 export interface IOrder {
     clientId: Types.ObjectId;
     packageIds?: Types.ObjectId[];
     serviceIds?: Types.ObjectId[];
+    orderPlaced: {
+        userId: Types.ObjectId | null;
+        userType: "Member" | "Client";
+    };
     locations: ICoordinates;
     address: {
         zipCode: string;
@@ -43,8 +49,9 @@ export interface IOrder {
         memberId?: Types.ObjectId[];
     };
     totalAmount: number;
-    status: 'Submitted' | 'Scheduled' | 'In-Production' | 'Delivered' | 'Revisions' | 'Completed';
+    status: 'Progress' | 'Completed';
     paymentStatus: 'Invoiced' | 'Unpaid' | 'Paid';
+
     taskIds: Types.ObjectId[] | null;
     createdAt?: Date;
     updatedAt?: Date;
@@ -92,6 +99,7 @@ export interface ISchedule {
     date: Date;
     start_time: string;
     end_time: string;
+    memberId: Types.ObjectId[];
 }
 
 export interface GetAllOrderQuery extends Record<string, unknown> {
@@ -110,3 +118,5 @@ export interface INotes {
     memberId?: Types.ObjectId;
     date?: Date;
 }
+
+

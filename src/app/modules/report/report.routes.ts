@@ -10,6 +10,7 @@ const router = express.Router();
 router.get('/order-par-services', ReportController.getOrderServices);
 router.get('/order-par-packages', ReportController.getOrderPackages);
 router.get('/order-client-report', ReportController.getOrderClientReports);
+router.get('/team-member-report', ReportController.getTeamMemberReports);
 
 
 

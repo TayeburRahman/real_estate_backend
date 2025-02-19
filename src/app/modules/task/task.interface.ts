@@ -13,6 +13,6 @@ export interface ICommentData {
   comment: {
     text: string;
     userId: Types.ObjectId;
-    userType: ENUM_USER_ROLE;
+    userType: 'Member' | 'Client';
   };
 }
