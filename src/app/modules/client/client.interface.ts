@@ -3,7 +3,14 @@ import mongoose, { Document } from 'mongoose';
 // export interface ILocation {
 //   type: 'Point';
 //   coordinates: number[];
-// }
+// } 
+
+export interface ClientDocument extends Document {
+  name: string;
+  email: string;
+  profile_image?: string;
+  role: string;
+}
 
 export interface IClient extends Document {
   authId: mongoose.Types.ObjectId;

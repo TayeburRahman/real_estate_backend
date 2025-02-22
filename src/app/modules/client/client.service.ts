@@ -123,8 +123,10 @@ const getClientAgent = async (query: any) => {
   return result;
 };
 
+// =Invoice =============
 const getAllClientsWithOrder = async (query: any) => {
-  const userQuery = new QueryBuilder(Client.find({ role: "CLIENT" }), query)
+  // @ts-ignore
+  const userQuery = new QueryBuilder(Client.find({ role: "CLIENT" }).select("name email profile_image _id"), query)
     .search(["name", "email"])
     .filter()
     .sort()
@@ -134,28 +136,36 @@ const getAllClientsWithOrder = async (query: any) => {
   const clients = await userQuery.modelQuery;
   const meta = await userQuery.countTotal();
 
-  // Get the order count for each client
-  const orders = await Orders.aggregate([
+  const unpaidOrders = await Orders.aggregate([
+    {
+      $match: { paymentStatus: "Unpaid" },
+    },
     {
       $group: {
         _id: "$clientId",
-        totalOrders: { $sum: 1 },
-      },
-    },
+        totalUnpaidOrders: { $sum: 1 },
+        orders: {
+          $push: {
+            _id: "$_id",
+            createdAt: "$createdAt",
+            totalAmount: "$totalAmount"
+          }
+        }
+      }
+    }
   ]);
 
-  // Merge order count with clients
-  const clientsWithOrders = clients.map((client: any) => {
-    const clientOrder = orders.find(order => order._id.toString() === client._id.toString());
+  const clientsWithUnpaidOrders = clients.map((client: any) => {
+    const clientOrder = unpaidOrders.find(order => order._id.toString() === client._id.toString());
     return {
       ...client.toObject(),
-      totalOrders: clientOrder ? clientOrder.totalOrders : 0,
+      totalUnpaidOrders: clientOrder ? clientOrder.totalUnpaidOrders : 0,
+      unpaidOrderDetails: clientOrder ? clientOrder.orders : [],
     };
   });
 
-  return { meta, result: clientsWithOrders };
+  return { meta, result: clientsWithUnpaidOrders };
 };
-
 
 // =Client site *Dashboard*** =========================
 const getUpcomingAppointment = async (query: { clientId: string }) => {

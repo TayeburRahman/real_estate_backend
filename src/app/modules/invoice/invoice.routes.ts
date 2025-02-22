@@ -1,15 +1,11 @@
 
-// import express from 'express';
+import express from 'express';
+import { InvoiceController } from './invoice.controller';
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.get('/order-par-services', ReportController.getOrderServices);
-
-
-
-
+router.post('/create-order-invoice', InvoiceController.createOrderInvoice);
+router.post('/get-client-invoice', InvoiceController.getClientOrderInvoice);
 
 
-
-
-// export const InvoiceRoutes = router;
+export const InvoiceRoutes = router;

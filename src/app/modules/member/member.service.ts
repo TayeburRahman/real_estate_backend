@@ -84,7 +84,7 @@ const getAllMembersWithOutPagination = async (query: GetAllGetQuery) => {
 
 const getAllMembers = async (user: IReqUser, query: GetAllGetQuery) => {
 
-  const userQuery = new QueryBuilder(Member.find({ role: "MEMBER" }), query)
+  const userQuery = new QueryBuilder(Member.find({ role: "MEMBER" }).populate('serviceId', 'title price _id'), query)
     .search(["name", "email"])
     .filter()
     .sort()

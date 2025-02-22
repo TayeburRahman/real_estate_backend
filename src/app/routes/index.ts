@@ -8,6 +8,7 @@ import { TaskRoutes } from '../modules/task/task.routes';
 import { ClientRoutes } from '../modules/client/client.routes';
 import { MemberRoutes } from '../modules/member/member.routes';
 import { ReportRoutes } from '../modules/report/report.routes';
+import { InvoiceRoutes } from '../modules/invoice/invoice.routes';
 
 const router = express.Router();
 
@@ -49,9 +50,10 @@ const moduleRoutes = [
     path: '/task',
     route: TaskRoutes,
   },
-
-
-
+  {
+    path: '/invoice',
+    route: InvoiceRoutes,
+  }
 
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
