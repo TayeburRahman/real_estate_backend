@@ -135,6 +135,31 @@ const updateStatusTask = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCommentOfTaskFiles = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as { taskId: string, fileId: string, replayId: string };
+  const result = await TaskService.getCommentOfTaskFiles(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Get Successfully`,
+    data: result,
+  });
+});
+
+const deleteTaskFiles = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as { types: string, fileId: string };
+  const taskId = req.params.taskId as string;
+  const result = await TaskService.deleteTaskFiles(query.types, query.fileId, taskId);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Get Successfully`,
+    data: result,
+  });
+});
+
+
+
 export const TaskController = {
   getAllTasks,
   assignTeamMember,
@@ -146,5 +171,7 @@ export const TaskController = {
   addSourceFileOfTask,
   addFinishFileOfTask,
   addCommentOfTaskFiles,
-  updateStatusTask
+  updateStatusTask,
+  getCommentOfTaskFiles,
+  deleteTaskFiles
 };

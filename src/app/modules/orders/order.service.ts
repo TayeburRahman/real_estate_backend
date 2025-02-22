@@ -192,7 +192,10 @@ const updateOrder = async (orderId: Types.ObjectId, updateData: Partial<IOrder>,
         const { taskIds, packageIds, serviceIds, schedule, ...allowedUpdates } = updateData;
 
         if (files?.length) {
-            allowedUpdates.uploadFiles = files.map(file => file.path);
+            allowedUpdates.uploadFiles = [
+                ...(updateData.uploadFiles || []),
+                ...files.map(file => file.path)
+            ];
         }
 
         const updatedOrder = await Orders.findByIdAndUpdate(
@@ -435,6 +438,7 @@ const getSignalOrder = async (orderId: string) => {
 
     return result;
 }
+// Invoice===================================
 
 export const OrdersService = {
     createNewOrder,
@@ -447,24 +451,3 @@ export const OrdersService = {
     addOrderNotes,
     getSignalOrder
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// if (files) {
-//     const uploadFiles = files.map(result => ({
-//         url: result.path,
-//     }));
-//     payload.uploadFiles = uploadFiles;
-// }

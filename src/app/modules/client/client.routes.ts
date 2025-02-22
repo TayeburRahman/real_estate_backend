@@ -15,16 +15,14 @@ router.get("/upcoming-appointment",
         ENUM_USER_ROLE.AGENT,
     ), ClientController.getUpcomingAppointment);
 router.get("/recent-deliver-order",
-    // auth(
-    //     ENUM_USER_ROLE.CLIENT,
-    //     ENUM_USER_ROLE.AGENT,
-    // ), 
     ClientController.getRecentDeliverOrder);
 router.get("/get-all-orders",
-    // auth(
-    //     ENUM_USER_ROLE.CLIENT,
-    //     ENUM_USER_ROLE.AGENT,
-    // ), 
     ClientController.getClientOrder);
+
+router.get("/clients-invoice",
+    ClientController.getAllClientsWithOrder);
+
+
+
 
 export const ClientRoutes = router;

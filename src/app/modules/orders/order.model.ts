@@ -164,7 +164,8 @@ const commentSchema = new Schema<IComment>({
     },
     replayId: {
         type: Schema.Types.ObjectId,
-        ref: "Comment"
+        ref: "Comment",
+        default: null,
     },
     comment: {
         text: {

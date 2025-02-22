@@ -43,7 +43,7 @@ router.patch(
 )
 router.patch(
   "/client/edit-profile/userId/:userId/authId/:authId",
-  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT),
+  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   uploadFile(),
   ClientController.updateProfile
 )

@@ -35,6 +35,7 @@ const getProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 // ===============
 const getAllClients = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
@@ -46,6 +47,7 @@ const getAllClients = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 const getClientAgent = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
   const result = await ClientService.getClientAgent(query);
@@ -56,6 +58,7 @@ const getClientAgent = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 // =client site====================================
 const getUpcomingAppointment = catchAsync(async (req: Request, res: Response) => {
   const query = req.query as any;
@@ -79,7 +82,6 @@ const getRecentDeliverOrder = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-
 const getClientOrder = catchAsync(async (req: Request, res: Response) => {
   const query = req.query as any;
   const result = await ClientService.getClientOrder(query);
@@ -91,6 +93,16 @@ const getClientOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllClientsWithOrder = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query;
+  const result = await ClientService.getAllClientsWithOrder(query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
 
 
 export const ClientController = {
@@ -101,5 +113,6 @@ export const ClientController = {
   getClientAgent,
   getUpcomingAppointment,
   getRecentDeliverOrder,
-  getClientOrder
+  getClientOrder,
+  getAllClientsWithOrder
 };

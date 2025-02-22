@@ -7,8 +7,6 @@ import QueryBuilder from '../../../builder/QueryBuilder';
 import { Types } from 'mongoose';
 import { Orders } from '../orders/order.model';
 import { IOrder } from '../orders/order.interface';
-import { IMember } from '../member/member.interface';
-import Member from '../member/member.model';
 
 
 const updateMyProfile = async (req: RequestData) => {
@@ -51,11 +49,11 @@ const updateMyProfile = async (req: RequestData) => {
 
 const updateProfile = async (req: RequestData) => {
   const { files, body: data } = req;
-  const { authId, userId } = req.params as any
+  const { authId, userId } = req.params as any;
 
   const checkValidClient = await Client.findById(userId);
   if (!checkValidClient) {
-    throw new ApiError(404, "You are not authorized");
+    throw new ApiError(404, "user not found");
   }
 
   const fileUploads: Record<string, string> = {};
@@ -124,6 +122,40 @@ const getClientAgent = async (query: any) => {
 
   return result;
 };
+
+const getAllClientsWithOrder = async (query: any) => {
+  const userQuery = new QueryBuilder(Client.find({ role: "CLIENT" }), query)
+    .search(["name", "email"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const clients = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+
+  // Get the order count for each client
+  const orders = await Orders.aggregate([
+    {
+      $group: {
+        _id: "$clientId",
+        totalOrders: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Merge order count with clients
+  const clientsWithOrders = clients.map((client: any) => {
+    const clientOrder = orders.find(order => order._id.toString() === client._id.toString());
+    return {
+      ...client.toObject(),
+      totalOrders: clientOrder ? clientOrder.totalOrders : 0,
+    };
+  });
+
+  return { meta, result: clientsWithOrders };
+};
+
 
 // =Client site *Dashboard*** =========================
 const getUpcomingAppointment = async (query: { clientId: string }) => {
@@ -327,6 +359,7 @@ export const ClientService = {
   getClientAgent,
   getUpcomingAppointment,
   getRecentDeliverOrder,
-  getClientOrder
+  getClientOrder,
+  getAllClientsWithOrder
 };
 

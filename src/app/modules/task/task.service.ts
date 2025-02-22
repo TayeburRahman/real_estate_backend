@@ -160,6 +160,7 @@ const getAllAssigned = async (user: IReqUser) => {
         "order.address": 1,
         serviceId: 1,
         "service.title": 1,
+        status: 1,
         memberId: 1,
         createdAt: 1
       }
@@ -299,6 +300,38 @@ const addCommentOfTaskFiles = async (
   return result;
 };
 
+const getCommentOfTaskFiles = async (query: { taskId: string, fileId?: string }) => {
+  const { taskId, fileId } = query;
+
+  console.log("========", taskId, fileId);
+
+  if (!taskId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Task ID is required");
+  }
+
+  const filter: any = { taskId };
+  if (fileId) {
+    filter.fileId = fileId;
+  }
+
+  const result = await Comment.find(filter)
+    .populate({
+      path: "comment.userId",
+      select: "name email profile_image"
+    })
+    .populate({
+      path: "replayId",
+      populate: {
+        path: "comment.userId",
+        select: "name email profile_image"
+      }
+    })
+    .exec();
+
+  return result;
+};
+
+
 const updateStatusTask = async (query: { status: string; taskId: string }) => {
   const task = await Tasks.findById(query.taskId);
   if (!task) {
@@ -315,6 +348,36 @@ const updateStatusTask = async (query: { status: string; taskId: string }) => {
   return task.status;
 };
 
+const deleteTaskFiles = async (types: string, fileId: string, taskId: string) => {
+
+  if (!types || (types !== 'sourceFile' && types !== 'finishFile')) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid type. Must be 'sourceFile' or 'finishFile'");
+  }
+
+  const task = await Tasks.findById(taskId);
+  if (!task) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
+  }
+
+  if (!task[types] || !Array.isArray(task[types])) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `No files found in ${types}`);
+  }
+
+  const updatedFiles = task[types].filter((file: any) => file._id.toString() !== fileId);
+
+  if (updatedFiles.length === task[types].length) {
+    throw new ApiError(httpStatus.NOT_FOUND, "File not found");
+  }
+
+  task[types] = updatedFiles;
+  await task.save();
+
+  return { message: "File deleted successfully" };
+};
+
+
+
+
 
 export const TaskService = {
   getAllTasks,
@@ -328,6 +391,8 @@ export const TaskService = {
   addFinishFileOfTask,
   addCommentOfTaskFiles,
   updateStatusTask,
+  getCommentOfTaskFiles,
+  deleteTaskFiles
 
 };
 

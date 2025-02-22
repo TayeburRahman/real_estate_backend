@@ -29,6 +29,9 @@ router.patch("/add-source-file/:taskId",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     uploadC.array('sourceFile'),
     TaskController.addSourceFileOfTask);
+router.patch("/delete-file/:taskId",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.deleteTaskFiles);
 router.patch("/add-finished-file/:taskId",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     uploadC.array('finishFile'),
@@ -37,6 +40,9 @@ router.patch("/add-finished-file/:taskId",
 router.patch("/add-comment",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.addCommentOfTaskFiles);
+router.get("/get-comment",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.getCommentOfTaskFiles);
 router.patch("/update-status",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.updateStatusTask);
