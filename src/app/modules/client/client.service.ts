@@ -71,7 +71,7 @@ const updateProfile = async (req: RequestData) => {
   const [auth, result] = await Promise.all([
     Auth.findByIdAndUpdate(
       authId,
-      { address: updatedUserData.address, phone_number: updatedUserData.phone_number, name: updatedUserData.name },
+      { address: updatedUserData.address, phone_number: updatedUserData.phone_number, name: updatedUserData.name, profile_image: updatedUserData.profile_image },
       {
         new: true,
       }
@@ -357,7 +357,6 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
 
   return ordersWithStatus;
 }
-
 
 
 

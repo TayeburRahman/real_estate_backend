@@ -5,26 +5,24 @@ const messageSchema = new mongoose.Schema<IMessage>(
   {
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
-      // ref: 'User',
+      ref: 'Auth',
       required: true,
     },
     receiverId: {
       type: mongoose.Schema.Types.ObjectId,
-      // ref: 'User',
-      required: true,
+      ref: 'Auth',
     },
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Conversation',
       required: true,
     },
-
     message: {
       type: String,
       required: true,
     },
     message_img: {
-      type: String, 
+      type: String,
     },
   },
   {

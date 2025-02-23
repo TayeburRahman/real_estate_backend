@@ -37,8 +37,37 @@ const getClientOrderInvoice = catchAsync(async (req: Request, res: Response) => 
 });
 
 
+const createCheckoutSessionStripe = catchAsync(async (req: Request, res: Response) => {
+    const result = await InvoiceService.createCheckoutSessionStripe(req);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Create Checkout Session Successfully",
+        data: result,
+    });
+});
+
+const stripeCheckAndUpdateStatusSuccess = catchAsync(async (req: Request, res: Response) => {
+    const result = await InvoiceService.stripeCheckAndUpdateStatusSuccess(req);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Update Session Successfully",
+        data: result,
+    });
+});
+
+
+
+
+
+
 
 export const InvoiceController = {
     createOrderInvoice,
-    getClientOrderInvoice
+    getClientOrderInvoice,
+    createCheckoutSessionStripe,
+    stripeCheckAndUpdateStatusSuccess
 }

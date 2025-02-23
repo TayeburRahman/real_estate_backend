@@ -76,6 +76,10 @@ const MemberSchema = new Schema<IMember>(
       type: Boolean,
       default: false,
     },
+    is_admin: {
+      type: Boolean,
+      default: false,
+    },
     edit_order: {
       type: Boolean,
       default: false,

@@ -3,13 +3,23 @@ import { IConversation } from './interface';
 
 const conversationSchema = new mongoose.Schema<IConversation>(
   {
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      default: null,
+    },
+    favorite: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Auth',
+      },
+    ],
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        // ref: 'User',
+        ref: 'Auth',
       },
     ],
-
     messages: [
       {
         type: mongoose.Schema.Types.ObjectId,

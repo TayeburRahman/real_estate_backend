@@ -88,7 +88,7 @@ const getOrderServices = catchAsync(async (req: Request, res: Response) => {
     const orderId = req.query.orderId as string;
     const clientId = req.query.clientId as string;
 
-    const result = await OrdersService.getOrderServices(orderId, clientId);
+    const result = await OrdersService.getOrderServices(orderId);
 
     sendResponse(res, {
         statusCode: 200,

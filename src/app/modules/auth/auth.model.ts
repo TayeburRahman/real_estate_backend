@@ -31,6 +31,10 @@ const AuthSchema: Schema<IAuth> = new Schema(
     phone_number: {
       type: String,
     },
+    profile_image: {
+      type: String,
+      default: null,
+    },
     role: {
       type: String,
       enum: ["AGENT", "CLIENT", "MEMBER", "ADMIN", "SUPER_ADMIN"],

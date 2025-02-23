@@ -23,5 +23,6 @@ export interface IMember extends Document {
   status?: 'pending' | 'approved' | 'declined';
   role: string | null;
   roleOfName: string | null;
-  // location?: ILocation;
+  is_admin?: boolean | null;
 }
+

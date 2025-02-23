@@ -141,6 +141,12 @@ const registrationUser = async (files: any, payload: IAuth) => {
     ]);
   }
 
+  if (files) {
+    if (files.profile_image && files.profile_image[0]) {
+      other.profile_image = `/images/profile/${files.profile_image[0].filename}`;
+    }
+  }
+
   const { activationCode } = createActivationToken();
   const auth = {
     role,
@@ -151,7 +157,8 @@ const registrationUser = async (files: any, payload: IAuth) => {
     expirationTime: Date.now() + 3 * 60 * 1000,
     isActive: true,
     phone_number: other.phone_number,
-    address: other.address
+    address: other.address,
+    profile_image: other.profile_image
   };
 
   const createAuth = (await Auth.create(auth)) as IAuth;
@@ -163,13 +170,6 @@ const registrationUser = async (files: any, payload: IAuth) => {
   other.authId = createAuth._id;
   other.email = email;
   other.role = role;
-
-  if (files) {
-    if (files.profile_image && files.profile_image[0]) {
-      other.profile_image = `/images/profile/${files.profile_image[0].filename}`;
-    }
-  }
-
 
   // Role-based user creation
   let result;
@@ -184,6 +184,8 @@ const registrationUser = async (files: any, payload: IAuth) => {
   } else {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid role provided!");
   }
+
+  console.log('result', result)
 
   return { result, role, message: "Account created successfully!" };
 };
@@ -394,7 +396,7 @@ const resetPassword = async (req: { query: { email: string }; body: ResetPasswor
   return result;
 };
 
-const changePassword = async (user: { authId: string }, payload: ChangePasswordPayload) => {
+const changePassword = async (user: { authId: Types.ObjectId }, payload: ChangePasswordPayload) => {
   const { authId } = user;
 
   const { oldPassword, newPassword, confirmPassword } = payload;

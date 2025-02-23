@@ -41,14 +41,13 @@ router.patch(
   uploadFile(),
   ClientController.updateMyProfile
 )
+
 router.patch(
   "/client/edit-profile/userId/:userId/authId/:authId",
   auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   uploadFile(),
   ClientController.updateProfile
 )
-
-
 // //------ Admin Router ---------------
 router.get(
   "/member/profile",
@@ -58,6 +57,12 @@ router.get(
 router.patch(
   "/member/edit-profile",
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  uploadFile(),
+  MemberController.updateMyProfile
+)
+router.patch(
+  "/members/edit-profile/memberId/:userId/authId/:authId",
+  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   uploadFile(),
   MemberController.updateProfile
 )

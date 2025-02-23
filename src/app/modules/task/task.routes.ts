@@ -46,6 +46,10 @@ router.get("/get-comment",
 router.patch("/update-status",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.updateStatusTask);
+// =============
+router.patch("/revisions",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.revisionsRequestTask);
 
 
 export const TaskRoutes = router;

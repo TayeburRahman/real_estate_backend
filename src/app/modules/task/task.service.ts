@@ -331,7 +331,6 @@ const getCommentOfTaskFiles = async (query: { taskId: string, fileId?: string })
   return result;
 };
 
-
 const updateStatusTask = async (query: { status: string; taskId: string }) => {
   const task = await Tasks.findById(query.taskId);
   if (!task) {
@@ -375,6 +374,9 @@ const deleteTaskFiles = async (types: string, fileId: string, taskId: string) =>
   return { message: "File deleted successfully" };
 };
 
+const revisionsRequestTask = async (payload: { text: string }, query: { taskId: string, fileId: string }) => {
+
+}
 
 
 
@@ -392,7 +394,8 @@ export const TaskService = {
   addCommentOfTaskFiles,
   updateStatusTask,
   getCommentOfTaskFiles,
-  deleteTaskFiles
+  deleteTaskFiles,
+  revisionsRequestTask
 
 };
 

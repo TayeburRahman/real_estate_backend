@@ -332,7 +332,7 @@ const getAllOrders = async (query: GetAllOrderQuery) => {
     };
 };
 
-const getOrderServices = async (orderId: string, clientId: string) => {
+const getOrderServices = async (orderId: string) => {
     if (!orderId) {
         throw new ApiError(404, 'Invalid Order ID');
     }
@@ -344,11 +344,15 @@ const getOrderServices = async (orderId: string, clientId: string) => {
             populate: {
                 path: 'services',
                 select: "title _id"
-            },
+            }
         })
         .populate({
             path: 'serviceIds',
-            select: "title _id price"
+            select: "title _id price descriptions service_image",
+            populate: ({
+                path: 'category',
+                select: "name",
+            })
         })
         .lean();
 
@@ -357,7 +361,7 @@ const getOrderServices = async (orderId: string, clientId: string) => {
     }
 
     if (order.serviceIds?.length) {
-        const groups = await PricingGroup.find({ clients: clientId }).lean();
+        const groups = await PricingGroup.find({ clients: order.clientId }).lean();
         // @ts-ignore
         order.serviceIds = order.serviceIds.map((service) => {
             const matchedGroup = groups.find(group =>

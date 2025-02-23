@@ -1,15 +1,16 @@
 import httpStatus from "http-status";
-import { Package, Service } from "../service/service.model";
 import { Orders } from "../orders/order.model";
-import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
-import Client from "../client/client.model";
-import Member from "../member/member.model";
-import { IMember } from "../member/member.interface";
+
 import { IInvoice } from "./invoice.interface";
 import { IReqUser } from "../auth/auth.interface";
-import { Invoice } from "./invoice.model";
-
+import { Invoice, Transaction } from "./invoice.model";
+import QueryBuilder from "../../../builder/QueryBuilder";
+import config from "../../../config";
+import Client from "../client/client.model";
+import { IClient } from "../client/client.interface";
+const stripe = require("stripe")(config.stripe.stripe_secret_key);
+const DOMAIN_URL = process.env.RESET_PASS_UI_LINK;
 
 const createOrderInvoice = async (payload: IInvoice, user: IReqUser) => {
     try {
@@ -52,20 +53,159 @@ const createOrderInvoice = async (payload: IInvoice, user: IReqUser) => {
     }
 };
 
-const getClientOrderInvoice = async (payload: any, user: IReqUser) => {
+const getClientOrderInvoice = async (query: any, user: IReqUser) => {
 
-    const { clientId, searchTerm, page, limit } = payload;
+    const { clientId, searchTerm, page, limit } = query;
 
     if (!clientId) {
         throw new ApiError(400, "Client ID and search term are required.");
     }
 
+    const userQuery = new QueryBuilder(Invoice.find({ clientId: query.clientId })
+        .populate('orderIds', 'schedule totalAmount address')
+        .select('totalAmount orderIds status date'), query)
+        // .search(["name", "email"])
+        .filter()
+        .sort()
+        .paginate()
+        .fields();
 
+    const result = await userQuery.modelQuery;
+    const meta = await userQuery.countTotal();
+
+    return {
+        meta,
+        data: result,
+    };
 
 }
+// =====================
+const createCheckoutSessionStripe = async (req: any) => {
+    try {
+        const { invoiceId, price } = req.query as any;
+        const { userId, role } = req.user as IReqUser;
 
+        if (!invoiceId) {
+            throw new ApiError(httpStatus.BAD_REQUEST, 'Missing required fields.');
+        }
+
+        const user = await Client.findById(userId) as IClient;
+        if (!user) {
+            throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
+        }
+
+        const invoice = await Invoice.findById(invoiceId)
+        if (!invoice) {
+            throw new ApiError(httpStatus.NOT_FOUND, 'invalid invoice ID.');
+        }
+
+        const unitAmount = Number(invoice.totalAmount) * 100;
+
+        let session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            success_url: `${DOMAIN_URL}/payment/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${DOMAIN_URL}/cancel`,
+            customer_email: `${user?.email}`,
+            client_reference_id: invoiceId,
+            metadata: {
+                payUser: userId,
+                orderIds: invoice.orderIds,
+                invoiceId: invoiceId,
+            },
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        unit_amount: unitAmount,
+                        product_data: {
+                            name: "Service Payment From Invoice",
+                            description: `Invoice ID: ${invoice?._id}`
+                        }
+                    },
+                    quantity: 1
+                }
+            ]
+        })
+
+        return { url: session.url };
+
+    } catch (error: any) {
+        throw new ApiError(400, error);
+    }
+};
+
+
+const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
+    const sessionId = req.query.session_id;
+
+    if (!sessionId) {
+        return { status: "failed", message: "Missing session ID in the request." };
+    }
+
+    try {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+        if (!session) {
+            return { status: "failed", message: "Session not found." };
+        }
+
+        if (session.payment_status !== 'paid') {
+            return { status: "failed", message: "Payment not approved." };
+        }
+
+        const { orderIds, payUser, invoiceId } = session.metadata;
+
+        const invoice = await Invoice.findById(invoiceId);
+        if (!invoice) {
+            return {
+                status: "failed",
+                message: "Invoice not found!",
+                text: 'Payment succeeded, but the invoice could not be found. Please contact support.'
+            };
+        }
+
+        for (const order of invoice.orderIds) {
+            const update = await Orders.findByIdAndUpdate(order, { $set: { paymentStatus: 'Invoiced' } });
+            console.log(update)
+        }
+
+        invoice.status = 'Paid';
+        await invoice.save();
+
+        const amount = Number(session.amount_total) / 100;
+
+        // Create transaction data
+        const transactionData = {
+            invoiceId,
+            payUser,
+            userId: payUser,
+            amount: amount,
+            paymentStatus: "Completed",
+            isFinish: false,
+            transactionId: session.payment_intent,
+            paymentDetails: {
+                email: session.customer_email,
+                payId: sessionId,
+                currency: "USD"
+            }
+        };
+
+        const newTransaction = await Transaction.create(transactionData);
+
+        console.log("========", newTransaction)
+
+        return { status: "success", result: newTransaction };
+
+    } catch (error: any) {
+        console.error('Error processing Stripe payment:', error);
+        return { status: "failed", message: "Payment execution failed", error: error.message };
+    }
+};
 
 export const InvoiceService = {
     createOrderInvoice,
-    getClientOrderInvoice
+    getClientOrderInvoice,
+    createCheckoutSessionStripe,
+    stripeCheckAndUpdateStatusSuccess
 }

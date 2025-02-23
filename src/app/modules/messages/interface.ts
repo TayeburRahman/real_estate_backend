@@ -1,13 +1,13 @@
 import { Types } from 'mongoose';
 import { IAuth } from '../auth/auth.interface';
- 
+
 
 export type IConversation = {
+  orderId: Types.ObjectId;
   participants: Types.ObjectId[];
-  isGroup: boolean;
-  groupName: string;
+  isOrder: boolean;
+  favorite: Types.ObjectId[];
   messages: Types.ObjectId[];
-  externalModelType: string;
 };
 export type IMessage = {
   senderId: Types.ObjectId | IAuth;

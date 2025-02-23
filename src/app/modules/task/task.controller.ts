@@ -158,6 +158,20 @@ const deleteTaskFiles = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const revisionsRequestTask = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as { taskId: string, fileId: string };
+  const body = req.body as {
+    text: string
+  }
+  const result = await TaskService.revisionsRequestTask(body, query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Revisions Request Successfully`,
+    data: result,
+  });
+});
+
 
 
 export const TaskController = {
@@ -173,5 +187,6 @@ export const TaskController = {
   addCommentOfTaskFiles,
   updateStatusTask,
   getCommentOfTaskFiles,
-  deleteTaskFiles
+  deleteTaskFiles,
+  revisionsRequestTask
 };

@@ -8,7 +8,7 @@ import { GetAllGetQuery } from '../service/service.interface';
 import QueryBuilder from '../../../builder/QueryBuilder';
 import { IReqUser } from '../auth/auth.interface';
 
-const updateProfile = async (req: RequestData) => {
+const updateMyProfile = async (req: RequestData) => {
   const { files, body: data } = req;
   const { authId, userId } = req.user
 
@@ -45,6 +45,45 @@ const updateProfile = async (req: RequestData) => {
 
   return result;
 };
+
+const updateProfile = async (req: RequestData) => {
+  const { files, body: data } = req;
+  const { authId, userId } = req.params as any;
+
+  const checkValidDriver = await Member.findById(userId);
+  if (!checkValidDriver) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  const fileUploads: Record<string, string> = {};
+  if (files) {
+    if (files.profile_image && files.profile_image[0]) {
+      fileUploads.profile_image = `/images/profile/${files.profile_image[0].filename}`;
+    }
+    if (files.cover_image && files.cover_image[0]) {
+      fileUploads.cover_image = `/images/profile/${files.cover_image[0].filename}`;
+    }
+  }
+
+  const updatedUserData = { ...data, ...fileUploads };
+
+  const [auth, result] = await Promise.all([
+    Auth.findByIdAndUpdate(
+      authId,
+      { address: updatedUserData.address, phone_number: updatedUserData.phone_number, name: updatedUserData.name, profile_image: updatedUserData.profile_image },
+      {
+        new: true,
+      }
+    ),
+    Member.findByIdAndUpdate(userId, updatedUserData, {
+      new: true,
+      runValidators: true,
+    }),
+  ]);
+
+  return result;
+};
+
 
 const myProfile = async (user: { userId: Types.ObjectId }) => {
   const userId = user.userId;
@@ -84,7 +123,7 @@ const getAllMembersWithOutPagination = async (query: GetAllGetQuery) => {
 
 const getAllMembers = async (user: IReqUser, query: GetAllGetQuery) => {
 
-  const userQuery = new QueryBuilder(Member.find({ role: "MEMBER" }).populate('serviceId', 'title price _id'), query)
+  const userQuery = new QueryBuilder(Member.find({ role: { $in: ["MEMBER", "ADMIN"] } }).populate('serviceId', 'title price _id'), query)
     .search(["name", "email"])
     .filter()
     .sort()
@@ -104,6 +143,7 @@ export const MemberService = {
   myProfile,
   updateProfile,
   getAllMembersWithOutPagination,
-  getAllMembers
+  getAllMembers,
+  updateMyProfile
 };
 

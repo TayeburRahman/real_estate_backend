@@ -6,6 +6,16 @@ import { MemberService } from "./member.service";
 import { RequestData } from "../../../interfaces/common";
 import { GetAllGetQuery } from "../service/service.interface";
 
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const result = await MemberService.updateProfile(req as any);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Profile updated successfully",
+    data: result,
+  });
+});
+
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const result = await MemberService.updateProfile(req as any);
   sendResponse(res, {
@@ -15,6 +25,7 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 
 const myProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IReqUser;
@@ -55,5 +66,6 @@ export const MemberController = {
   myProfile,
   updateProfile,
   getAllMembersWithOutPagination,
-  getAllMembers
+  getAllMembers,
+  updateMyProfile
 };
