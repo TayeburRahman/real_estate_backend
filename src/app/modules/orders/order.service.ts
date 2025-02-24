@@ -5,7 +5,7 @@ import { CreateTasksInput, GetAllOrderQuery, ICoordinates, INotes, IOrder, ISche
 import { Types } from "mongoose";
 import { Package, PricingGroup } from "../service/service.model";
 import { IReqUser } from "../auth/auth.interface";
-import { ENUM_USER_ROLE } from "../../../enums/user";
+import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from "../../../enums/user";
 
 
 const createNewOrder = async (user: IReqUser, payload: IOrder, files: Express.Multer.File[]) => {
@@ -43,12 +43,10 @@ const createNewOrder = async (user: IReqUser, payload: IOrder, files: Express.Mu
             userId: user.userId,
             userType: userType,
         }
-        // Handle file uploads
         if (files?.length) {
             payload.uploadFiles = files.map(file => file.path);
         }
 
-        // Collect unique services from packages
         const uniqueServices = new Set(payload.serviceIds);
         if (payload?.packageIds?.length) {
             for (const pkg of payload.packageIds) {
@@ -442,6 +440,22 @@ const getSignalOrder = async (orderId: string) => {
 
     return result;
 }
+
+const updateStatusOrder = async (query: { status: string; taskId: string }) => {
+    // const task = await Orders.findById(query.taskId);
+    // if (!task) {
+    //     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
+    // }
+
+    // if (!Object.values(ENUM_TASK_STATUS).includes(query.status as ENUM_TASK_STATUS)) {
+    //     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid task status");
+    // }
+
+    // task.status = query.status as ENUM_TASK_STATUS;
+    // await task.save();
+
+    // return task.status;
+};
 // Invoice===================================
 
 export const OrdersService = {
@@ -453,5 +467,6 @@ export const OrdersService = {
     getAllOrders,
     getOrderServices,
     addOrderNotes,
-    getSignalOrder
+    getSignalOrder,
+    updateStatusOrder
 }

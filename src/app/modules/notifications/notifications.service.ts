@@ -3,7 +3,6 @@ import Notification from './notifications.model';
 import ApiError from '../../../errors/ApiError';
 import { IReqUser } from '../auth/auth.interface';
 
-//Get
 const getNotifications = async () => {
   const allNotification = await Notification.find({ admin: true }).sort({
     createdAt: -1,
@@ -21,7 +20,6 @@ const deleteNotifications = async (req: Request) => {
   };
 };
 
-//Update
 const updateNotification = async (req: Request) => {
   const id = req.params.id;
 

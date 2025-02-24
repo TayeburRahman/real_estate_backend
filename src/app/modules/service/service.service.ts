@@ -5,7 +5,6 @@ import { GetAllGetQuery, IPackage, IPricingGroup, IService } from './service.int
 import { Types } from 'mongoose';
 import QueryBuilder from '../../../builder/QueryBuilder';
 import Client from '../client/client.model';
-import { Orders } from '../orders/order.model';
 
 const createServiceCategory = async (payload: { name: string }) => {
   const { name } = payload;
@@ -51,7 +50,6 @@ const getAllServiceCategories = async (searchTerm: string = '') => {
   const result = await ServiceCategory.find(filter);
   return result;
 };
-
 // =================================
 const createService = async (payload: IService, files: Express.Multer.File[]) => {
   const { category, title, price, descriptions } = payload;
@@ -84,9 +82,6 @@ const updateService = async (
   if (!Types.ObjectId.isValid(serviceId)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid service ID");
   }
-  console.log("===Payload===", payload);
-
-
 
   const existingService = await Service.findById(serviceId);
   if (!existingService) {
@@ -102,8 +97,6 @@ const updateService = async (
     console.log("newData", newData)
     payload.service_image = [...(payload.service_image || []), ...newData];
   }
-
-  console.log("===service_image===", payload);
 
   const updatedService = await Service.findByIdAndUpdate(serviceId, payload, {
     new: true,
@@ -154,7 +147,6 @@ const getAllServices = async (query: GetAllGetQuery) => {
     data: result,
   };
 };
-
 // =======================
 const createPackages = async (payload: IPackage, files: Express.Multer.File[]) => {
 
@@ -212,14 +204,11 @@ const updatePackage = async (
     const newData = files.map((file) => file.path);
     payload.package_image = [...(payload.package_image || []), ...newData];
   }
-  console.log("=payload=:", payload)
 
   const updatedPackage = await Package.findByIdAndUpdate(packageId, payload, {
     new: true,
     runValidators: true,
   });
-
-  console.log("==:", updatedPackage)
 
   if (!updatedPackage) {
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update package");
@@ -445,7 +434,6 @@ const getClientServices = async (searchTerm: string, clientId: string, categoryI
 
   return updatedServices;
 };
-
 
 export const ServiceService = {
   createServiceCategory,

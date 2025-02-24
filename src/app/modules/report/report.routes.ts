@@ -12,11 +12,4 @@ router.get('/order-par-packages', ReportController.getOrderPackages);
 router.get('/order-client-report', ReportController.getOrderClientReports);
 router.get('/team-member-report', ReportController.getTeamMemberReports);
 
-
-
-
-
-
-
-
 export const ReportRoutes = router;

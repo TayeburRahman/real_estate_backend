@@ -4,8 +4,9 @@ import mongoose, { Types } from 'mongoose';
 import { Comment, Orders, Tasks } from '../orders/order.model';
 import { IReqUser } from '../auth/auth.interface';
 import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from '../../../enums/user';
-import { ITasks } from '../orders/order.interface';
+import { IOrder, ITasks } from '../orders/order.interface';
 import { ICommentData } from './task.interface';
+import QueryBuilder from '../../../builder/QueryBuilder';
 
 const getAllTasks = async (query: any) => {
   const tasks = await Tasks.aggregate([
@@ -225,6 +226,70 @@ const viewTaskDetails = async (taskId: string) => {
   }
   return task;
 }
+
+const viewTaskDetailsClient = async (taskId: string) => {
+  const task = await Tasks.findById(taskId).select("finishFile");
+  if (!task) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
+  }
+  return task;
+}
+
+
+const getCompletedTask = async (
+  user: { userId: Types.ObjectId; authId: Types.ObjectId; role: string },
+  query: { page?: number; limit?: number }
+) => {
+  const { userId, role } = user;
+  const { page = 1, limit = 25 } = query;
+  const skip = (page - 1) * limit;
+
+  let matchQuery: any = { status: "Completed" };
+
+  if (role === ENUM_USER_ROLE.MEMBER) {
+    matchQuery.memberId = { $in: userId };
+  }
+
+  const taskQuery = Tasks.aggregate([
+    { $match: matchQuery },
+    {
+      $project: {
+        finishFile: 1,
+        createdAt: 1,
+      }
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        tasks: { $push: "$$ROOT" },
+        totalTasks: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: -1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: skip }, { $limit: limit }],
+      },
+    },
+  ]);
+
+  const result = await taskQuery.exec();
+
+  const total = result[0].metadata.length > 0 ? result[0].metadata[0].total : 0;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    result: result[0].data,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      perPage: limit,
+    },
+  };
+};
+
 // ===============
 const addSourceFileOfTask = async (files: Express.Multer.File[], taskId: string) => {
   if (!files || files.length === 0) {
@@ -344,6 +409,18 @@ const updateStatusTask = async (query: { status: string; taskId: string }) => {
   task.status = query.status as ENUM_TASK_STATUS;
   await task.save();
 
+  const orderId = task.orderId;
+  const allTasksOfOrder = await Tasks.find({ orderId });
+
+  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.COMPLETED);
+
+  const order = await Orders.findById(orderId) as IOrder;
+  if (allCompleted) {
+    order.status = 'Completed';
+    // @ts-ignore
+    await order.save();
+  }
+
   return task.status;
 };
 
@@ -378,9 +455,6 @@ const revisionsRequestTask = async (payload: { text: string }, query: { taskId: 
 
 }
 
-
-
-
 export const TaskService = {
   getAllTasks,
   assignTeamMember,
@@ -395,7 +469,8 @@ export const TaskService = {
   updateStatusTask,
   getCommentOfTaskFiles,
   deleteTaskFiles,
-  revisionsRequestTask
-
+  revisionsRequestTask,
+  getCompletedTask,
+  viewTaskDetailsClient
 };
 

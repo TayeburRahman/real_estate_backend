@@ -1,9 +1,6 @@
 import catchAsync from "../../../shared/catchasync";
 import sendResponse from "../../../shared/sendResponse";
 import { Request, Response } from 'express';
-import ApiError from "../../../errors/ApiError";
-import httpStatus from "http-status";
-import { Types } from "mongoose";
 import { TaskService } from "./task.service";
 import { IReqUser } from "../auth/auth.interface";
 
@@ -52,6 +49,18 @@ const getAllAssigned = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCompletedTask = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IReqUser;
+  const query = req.query as any;
+  const result = await TaskService.getCompletedTask(user, query);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get completed task successfully",
+    data: result,
+  });
+});
+
 const completeTaskUpdateStatus = catchAsync(async (req: Request, res: Response) => {
   const user = req.params.taskId as string;
   const result = await TaskService.completeTaskUpdateStatus(user);
@@ -79,6 +88,17 @@ const rejectTask = catchAsync(async (req: Request, res: Response) => {
 const viewTaskDetails = catchAsync(async (req: Request, res: Response) => {
   const taskId = req.params.taskId as string;
   const result = await TaskService.viewTaskDetails(taskId);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Task Get Successfully`,
+    data: result,
+  });
+});
+
+const viewTaskDetailsClient = catchAsync(async (req: Request, res: Response) => {
+  const taskId = req.params.taskId as string;
+  const result = await TaskService.viewTaskDetailsClient(taskId);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -188,5 +208,7 @@ export const TaskController = {
   updateStatusTask,
   getCommentOfTaskFiles,
   deleteTaskFiles,
-  revisionsRequestTask
+  revisionsRequestTask,
+  getCompletedTask,
+  viewTaskDetailsClient
 };

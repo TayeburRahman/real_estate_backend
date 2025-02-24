@@ -115,17 +115,21 @@ const handleMessageData = async (
             conversation.messages.push(newMessage._id);
             await Promise.all([conversation.save(), newMessage.save()]);
 
-            const activeUsers = [...onlineUsers]
-            // Notify all conversation participants
+            // Populate the senderId in the message
+            const populatedMessage = await Message.findById(newMessage._id).populate({
+                path: 'senderId',
+                select: 'name email profile_image',
+            });
+
+            const activeUsers = [...onlineUsers];
             for (const participantId of activeUsers) {
-                emitMessage(participantId.toString(), newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW_ORDER}/${orderId}`);
+                emitMessage(participantId.toString(), populatedMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW_ORDER}/${orderId}`);
             }
         } catch (error) {
             console.error("Error handling new order message:", error);
             socket.emit("error", { message: "An error occurred while processing the message." });
         }
     });
-
 };
 
 // Emit a message to a user

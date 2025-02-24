@@ -36,6 +36,11 @@ router.patch("/add-finished-file/:taskId",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     uploadC.array('finishFile'),
     TaskController.addFinishFileOfTask);
+router.get("/get-completed-task",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.getCompletedTask);
+
+
 // =========
 router.patch("/add-comment",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
@@ -50,6 +55,8 @@ router.patch("/update-status",
 router.patch("/revisions",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.revisionsRequestTask);
-
+router.get("/view-details-client/:taskId",
+    auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.viewTaskDetailsClient);
 
 export const TaskRoutes = router;

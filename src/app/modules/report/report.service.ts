@@ -8,7 +8,6 @@ import { IClient, IOrder, IPackage, IService } from "./report.interface";
 import Member from "../member/member.model";
 import { IMember } from "../member/member.interface";
 
-
 const getOrderServices = async () => {
     try {
         const services: IService[] = await Service.find({}, "_id title");
@@ -116,7 +115,6 @@ const getTeamMemberReports = async () => {
         throw new ApiError(404, "Failed to fetch team member reports");
     }
 };
-
 
 export const ReportService = {
     getOrderServices,

@@ -312,7 +312,7 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
         select: 'title'
       })
     })
-    .select("schedule address taskIds status paymentStatus updatedAt")
+    .select("schedule address taskIds status paymentStatus updatedAt uploadFiles")
     .sort(sortCondition);
 
   const STATUS_LABELS = {
@@ -349,6 +349,7 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
       status: order.status,
       paymentStatus: order.paymentStatus,
       updatedAt: order.updatedAt,
+      image: order.uploadFiles,
       taskIds: order.taskIds.map((task: any) => {
         return { name: task.serviceId?.title };
       })
@@ -357,8 +358,6 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
 
   return ordersWithStatus;
 }
-
-
 
 export const ClientService = {
   getProfile,
