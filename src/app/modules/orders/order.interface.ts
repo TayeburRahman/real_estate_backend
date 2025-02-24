@@ -83,10 +83,11 @@ export interface IComment {
     fileId: Types.ObjectId;
     taskId: Types.ObjectId;
     replayId: Types.ObjectId | null;
+    isRevision: boolean;
     comment: {
         text: string;
         userId: Types.ObjectId;
-        userType: 'Member' | 'Agent' | 'Client';
+        // userType: 'Member' | 'Agent' | 'Client';
     };
 }
 

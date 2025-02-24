@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { IMessage } from './interface';
 
 const messageSchema = new mongoose.Schema<IMessage>(
@@ -23,6 +23,12 @@ const messageSchema = new mongoose.Schema<IMessage>(
     },
     message_img: {
       type: String,
+    },
+    isRevision: {
+      type: Boolean,
+    },
+    fileId: {
+      type: Types.ObjectId,
     },
   },
   {

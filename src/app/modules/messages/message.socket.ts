@@ -3,6 +3,9 @@ import { ENUM_SOCKET_EVENT } from "../../../enums/user";
 import ApiError from "../../../errors/ApiError";
 import Conversation from "./conversation.model";
 import Message from "./message.model";
+import { Comment, Tasks } from "../orders/order.model";
+import { ITasks } from "../orders/order.interface";
+import { ICommentData } from "../task/task.interface";
 
 
 const handleMessageData = async (
@@ -130,6 +133,81 @@ const handleMessageData = async (
             socket.emit("error", { message: "An error occurred while processing the message." });
         }
     });
+
+    socket.on(ENUM_SOCKET_EVENT.REVISIONS_MESSAGE, async (data: { taskId: string; text: string; fileId: string }) => {
+        const { taskId, fileId, text } = data;
+        const senderId = socket.handshake.auth?.userId;
+
+        try {
+            if (!text || !taskId || !fileId) {
+                socket.emit("error", { message: "Task ID, File ID, or Text is missing!" });
+                return;
+            }
+            if (!senderId) {
+                socket.emit("error", { message: "Sender ID is missing." });
+                return;
+            }
+
+            const task = await Tasks.findById(taskId) as any;
+            if (!task) {
+                socket.emit("error", { message: "Task not found." });
+                return;
+            }
+
+            let image: any;
+            if (task.finishFile?.length > 0) {
+                image = task.finishFile.find((file: any) => file._id?.toString() === fileId)?.url;
+            }
+
+            const orderId = task.orderId;
+
+            let conversation = await Conversation.findOne({ orderId });
+            if (!conversation) {
+                conversation = await Conversation.create({
+                    orderId,
+                    participants: [senderId],
+                });
+            } else if (!conversation.participants.some(id => id.equals(senderId))) {
+                conversation.participants.push(senderId);
+            }
+
+            const newMessage = new Message({
+                senderId,
+                message: text,
+                message_img: image || null,
+                isRevision: true,
+                conversationId: conversation._id,
+                fileId: fileId,
+            });
+
+            conversation.messages.push(newMessage._id);
+            await Promise.all([conversation.save(), newMessage.save()]);
+
+            // Creating a comment
+            await Comment.create({
+                taskId,
+                fileId,
+                isRevision: true,
+                comments: [{ text, userId: senderId }],
+            });
+
+            // Populate sender details
+            const populatedMessage = await Message.findById(newMessage._id).populate({
+                path: "senderId",
+                select: "name email profile_image",
+            });
+
+            // Emit message to active users
+            const activeUsers = [...onlineUsers];
+            for (const participantId of activeUsers) {
+                emitMessage(participantId.toString(), populatedMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW_ORDER}/${orderId}`);
+            }
+        } catch (error) {
+            console.error("Error handling revision message:", error);
+            socket.emit("error", { message: "An error occurred while processing the message." });
+        }
+    });
+
 };
 
 // Emit a message to a user

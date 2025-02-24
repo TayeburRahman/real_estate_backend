@@ -16,6 +16,8 @@ export type IMessage = {
   message_img: string;
   message: string;
   externalModelType: string;
+  isRevision: boolean;
+  fileId: Types.ObjectId | null;
 };
 
 export type Participant = {

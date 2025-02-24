@@ -174,17 +174,14 @@ const commentSchema = new Schema<IComment>({
         },
         userId: {
             type: Types.ObjectId,
-            refPath: 'comment.userType',
+            ref: 'Auth',
             required: true,
         },
-        userType: {
-            type: String,
-            enum: ['Member', 'Client'],
-            required: true,
-        }
-    }
+    },
+    isRevision: {
+        type: Boolean,
+    },
 });
-
 
 const Orders = mongoose.model<IOrder>('Order', orderSchema);
 const Tasks = mongoose.model<ITasks>('Task', taskSchema);

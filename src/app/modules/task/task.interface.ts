@@ -10,9 +10,10 @@ export interface ICommentData {
   taskId: string;
   fileId?: string | null;
   replayId?: string | null;
+  isRevision?: boolean | null;
   comment: {
     text: string;
     userId: Types.ObjectId;
-    userType: 'Member' | 'Client';
+    // userType: 'Member' | 'Client';
   };
 }

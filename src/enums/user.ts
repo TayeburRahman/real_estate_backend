@@ -13,7 +13,7 @@ export enum ENUM_SOCKET_EVENT {
   MESSAGE_NEW_ORDER = "new-message-order",
   MESSAGE_GETALL_ORDER = "order-messages",
   CONVERSION = "conversion",
-
+  REVISIONS_MESSAGE = "messages",
   NOTIFICATION = "notification",
   NEW_NOTIFICATION = "new-notification",
   SEEN_NOTIFICATION = "seen-notification",

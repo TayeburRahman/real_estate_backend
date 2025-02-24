@@ -233,8 +233,7 @@ const viewTaskDetailsClient = async (taskId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
   }
   return task;
-}
-
+};
 
 const getCompletedTask = async (
   user: { userId: Types.ObjectId; authId: Types.ObjectId; role: string },
@@ -341,17 +340,16 @@ const addCommentOfTaskFiles = async (
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
   }
-  const userType = user.role === ENUM_USER_ROLE.ADMIN ||
-    user.role === ENUM_USER_ROLE.MEMBER ||
-    user.role === ENUM_USER_ROLE.SUPER_ADMIN ? "Member" : "Client";
+  // const userType = user.role === ENUM_USER_ROLE.ADMIN ||
+  //   user.role === ENUM_USER_ROLE.MEMBER ||
+  //   user.role === ENUM_USER_ROLE.SUPER_ADMIN ? "Member" : "Client";
   const data: ICommentData = {
     taskId,
     fileId: fileId || null,
     replayId: replayId || null,
     comment: {
       text: payload.text,
-      userId: user.userId,
-      userType: userType,
+      userId: user.authId,
     },
   };
 
