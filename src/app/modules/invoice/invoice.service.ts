@@ -101,6 +101,9 @@ const createCheckoutSessionStripe = async (req: any) => {
 
         const unitAmount = Number(invoice.totalAmount) * 100;
 
+
+        console.log("invoice", invoice)
+
         let session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'payment',
@@ -110,7 +113,6 @@ const createCheckoutSessionStripe = async (req: any) => {
             client_reference_id: invoiceId,
             metadata: {
                 payUser: userId,
-                orderIds: invoice.orderIds,
                 invoiceId: invoiceId,
             },
             line_items: [
@@ -134,7 +136,6 @@ const createCheckoutSessionStripe = async (req: any) => {
         throw new ApiError(400, error);
     }
 };
-
 
 const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
     const sessionId = req.query.session_id;

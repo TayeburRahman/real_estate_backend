@@ -69,9 +69,9 @@ const sendMessage = async (req: Request) => {
     });
   }
 
-  let message_img  = ''
+  let message_img = ''
   if (files?.message_img) {
-     message_img = `/images/message/${files.message_img[0].filename}`;
+    message_img = `/images/message/${files.message_img[0].filename}`;
   }
 
   const newMessage = new Message({
@@ -84,9 +84,9 @@ const sendMessage = async (req: Request) => {
 
   conversation.messages.push(newMessage._id);
   await Promise.all([conversation.save(), newMessage.save()]);
-   //@ts-ignore
-  const socketIO = global.io; 
-     //@ts-ignore
+  //@ts-ignore
+  const socketIO = global.io;
+  //@ts-ignore
   if (socketIO && conversation && newMessage) {
     socketIO.emit(`message::${conversation._id.toString()}`, newMessage);
   }
@@ -94,7 +94,6 @@ const sendMessage = async (req: Request) => {
   return newMessage;
 };
 
-//*
 const getMessages = async (req: Request, res: Response) => {
   try {
     const { id: receiverId } = req.params;

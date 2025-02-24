@@ -182,7 +182,7 @@ const getUpcomingAppointment = async (query: { clientId: string }) => {
     })
       .populate({
         path: 'schedule.memberId',
-        select: 'name'
+        select: 'name profile_image'
       })
       .select("schedule address taskIds")
       .sort({ "schedule.date": 1 });
@@ -191,8 +191,8 @@ const getUpcomingAppointment = async (query: { clientId: string }) => {
       const schedule = order.schedule;
 
       const membersAssigned = schedule.memberId && schedule.memberId.length > 0
-        ? schedule.memberId.map((member: any) => member.name)
-        : ["Unknown Agent"];
+        ? schedule.memberId.map((member: any) => ({ name: member.name, profile_image: member.profile_image }))
+        : [{ name: "Unknown Agent", profile_image: "" }];
 
       const orderDate = schedule.date ? schedule.date.toLocaleDateString() : "N/A";
       const appointments = schedule.end_time ? `${schedule.end_time}` : "N/A";
@@ -225,7 +225,7 @@ const getRecentDeliverOrder = async (query: { clientId: string }) => {
     })
       .populate({
         path: 'schedule.memberId',
-        select: 'name'
+        select: 'name profile_image'
       })
       .select("schedule address taskIds status paymentStatus updatedAt")
       .sort({ updatedAt: -1 });
@@ -234,8 +234,8 @@ const getRecentDeliverOrder = async (query: { clientId: string }) => {
       const schedule = order.schedule;
 
       const membersAssigned = schedule.memberId && schedule.memberId.length > 0
-        ? schedule.memberId.map((member: any) => member.name)
-        : ["Unknown Agent"];
+        ? schedule.memberId.map((member: any) => ({ name: member.name, profile_image: member.profile_image }))
+        : [{ name: "Unknown Agent", profile_image: "" }];
 
       const orderDate = schedule.date ? schedule.date.toLocaleDateString() : "N/A";
       const appointments = schedule.end_time ? `${schedule.end_time}` : "N/A";
@@ -350,7 +350,7 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
       paymentStatus: order.paymentStatus,
       updatedAt: order.updatedAt,
       taskIds: order.taskIds.map((task: any) => {
-        return { name: task.serviceId.title };
+        return { name: task.serviceId?.title };
       })
     };
   });

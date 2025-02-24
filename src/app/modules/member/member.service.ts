@@ -47,8 +47,11 @@ const updateMyProfile = async (req: RequestData) => {
 };
 
 const updateProfile = async (req: RequestData) => {
-  const { files, body: data } = req;
+  const { files, } = req;
+  const data = req.body;
   const { authId, userId } = req.params as any;
+
+  console.log("=============", data);
 
   const checkValidDriver = await Member.findById(userId);
   if (!checkValidDriver) {
@@ -83,7 +86,6 @@ const updateProfile = async (req: RequestData) => {
 
   return result;
 };
-
 
 const myProfile = async (user: { userId: Types.ObjectId }) => {
   const userId = user.userId;
