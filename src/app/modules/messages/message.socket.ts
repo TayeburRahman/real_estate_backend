@@ -51,7 +51,6 @@ const handleMessageData = async (
     },
     );
 
-
     socket.on(ENUM_SOCKET_EVENT.MESSAGE_NEW, async (data: { receiverId: string; text: string }) => {
         const { receiverId, text } = data;
 
@@ -128,6 +127,7 @@ const handleMessageData = async (
             for (const participantId of activeUsers) {
                 emitMessage(participantId.toString(), populatedMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW_ORDER}/${orderId}`);
             }
+
         } catch (error) {
             console.error("Error handling new order message:", error);
             socket.emit("error", { message: "An error occurred while processing the message." });
@@ -183,7 +183,6 @@ const handleMessageData = async (
             conversation.messages.push(newMessage._id);
             await Promise.all([conversation.save(), newMessage.save()]);
 
-            // Creating a comment
             await Comment.create({
                 taskId,
                 fileId,
@@ -191,7 +190,6 @@ const handleMessageData = async (
                 comments: [{ text, userId: senderId }],
             });
 
-            // Populate sender details
             const populatedMessage = await Message.findById(newMessage._id).populate({
                 path: "senderId",
                 select: "name email profile_image",
@@ -207,7 +205,6 @@ const handleMessageData = async (
             socket.emit("error", { message: "An error occurred while processing the message." });
         }
     });
-
 };
 
 // Emit a message to a user

@@ -227,11 +227,12 @@ const getRecentDeliverOrder = async (query: { clientId: string }) => {
         path: 'schedule.memberId',
         select: 'name profile_image'
       })
-      .select("schedule address taskIds status paymentStatus updatedAt")
+      .select("schedule address taskIds status paymentStatus updatedAt totalAmount")
       .sort({ updatedAt: -1 });
 
     const recentDeliveredOrders = orders.map((order: any) => {
       const schedule = order.schedule;
+      console.log("order", order)
 
       const membersAssigned = schedule.memberId && schedule.memberId.length > 0
         ? schedule.memberId.map((member: any) => ({ name: member.name, profile_image: member.profile_image }))
