@@ -234,6 +234,15 @@ const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => 
         },
     }, { new: true })
 
+    await Tasks.updateMany(
+        { orderId: orderId },
+        {
+            $set: {
+                schedule_memberId: memberId,
+                status: "Scheduled"
+            }
+        });
+
     return result;
 }
 

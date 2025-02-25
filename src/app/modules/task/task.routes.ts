@@ -36,9 +36,14 @@ router.patch("/add-finished-file/:taskId",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     uploadC.array('finishFile'),
     TaskController.addFinishFileOfTask);
-router.get("/get-completed-task",
+router.get("/get-new-task",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-    TaskController.getCompletedTask);
+    TaskController.getNewTasks);
+router.patch("/update-status-submitted",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.taskStatusUpdateSubmitted);
+
+
 
 
 // =========

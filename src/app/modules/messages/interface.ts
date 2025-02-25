@@ -18,6 +18,7 @@ export type IMessage = {
   externalModelType: string;
   isRevision: boolean;
   fileId: Types.ObjectId | null;
+  taskId: Types.ObjectId | null;
 };
 
 export type Participant = {

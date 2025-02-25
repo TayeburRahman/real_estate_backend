@@ -115,6 +115,7 @@ const taskSchema = new Schema<ITasks>({
         ref: 'Order',
         required: true,
     },
+    schedule_memberId: [{ type: Types.ObjectId, ref: 'Member' }],
     serviceId: {
         type: Schema.Types.ObjectId,
         ref: 'Service',

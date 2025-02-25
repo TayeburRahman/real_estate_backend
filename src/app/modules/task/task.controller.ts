@@ -27,7 +27,7 @@ const assignTeamMember = catchAsync(async (req: Request, res: Response) => {
 });
 
 const takenTaskOfTeamMember = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as IReqUser;
+  const user = req?.user as IReqUser;
   const taskId = req.params.taskId as any;
   const result = await TaskService.takenTaskOfTeamMember(user, taskId);
   sendResponse(res, {
@@ -49,10 +49,10 @@ const getAllAssigned = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getCompletedTask = catchAsync(async (req: Request, res: Response) => {
+const getNewTasks = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IReqUser;
   const query = req.query as any;
-  const result = await TaskService.getCompletedTask(user, query);
+  const result = await TaskService.getNewTasks(user, query);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -192,6 +192,23 @@ const revisionsRequestTask = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const taskStatusUpdateSubmitted = catchAsync(async (req: Request, res: Response) => {
+  const body = req.body as {
+    status: string,
+    taskId: string,
+    fileId: string,
+  }
+  const result = await TaskService.taskStatusUpdateSubmitted(body);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Revisions Request Successfully`,
+    data: result,
+  });
+});
+
+
+
 
 
 export const TaskController = {
@@ -209,6 +226,7 @@ export const TaskController = {
   getCommentOfTaskFiles,
   deleteTaskFiles,
   revisionsRequestTask,
-  getCompletedTask,
-  viewTaskDetailsClient
+  viewTaskDetailsClient,
+  getNewTasks,
+  taskStatusUpdateSubmitted
 };

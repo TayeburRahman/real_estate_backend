@@ -1,7 +1,7 @@
-
-import { Request } from 'express';
+import fs from 'fs';
 import multer from 'multer';
-const fs = require("fs");
+import { Request } from 'express';
+import ApiError from '../../errors/ApiError';
 
 export const uploadFile = () => {
   const storage = multer.diskStorage({
@@ -29,18 +29,7 @@ export const uploadFile = () => {
         fs.mkdirSync(uploadPath, { recursive: true });
       }
 
-      if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        // file.mimetype === 'image/webp' ||
-        file.mimetype === 'video/mp4'
-      ) {
-        cb(null, uploadPath);
-      } else {
-        //@ts-ignore
-        cb(new Error('Invalid file type'));
-      }
+      cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
       const name = Date.now() + '-' + file.originalname;
@@ -48,7 +37,7 @@ export const uploadFile = () => {
     },
   });
 
-  const fileFilter = (req: Request, file: any, cb: any) => {
+  const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowedFieldnames = [
       'image',
       'profile_image',
@@ -60,23 +49,23 @@ export const uploadFile = () => {
       'message_img',
     ];
 
-    if (file.fieldname === undefined) {
-      cb(null, true);
-    } else if (allowedFieldnames.includes(file.fieldname)) {
-      if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/webp' ||
-        file.mimetype === 'video/mp4'
-      ) {
-        cb(null, true);
-      } else {
-        cb(new Error('Invalid file type'));
-      }
-    } else {
-      cb(new Error('Invalid fieldname'));
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'image/webp',
+      'video/mp4',
+    ];
+
+    if (!allowedFieldnames.includes(file.fieldname)) {
+      return cb(new ApiError(400, 'Invalid fieldname.'));
     }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      return cb(new ApiError(400, 'Invalid uploaded file type.'));
+    }
+
+    cb(null, true);
   };
 
   const upload = multer({

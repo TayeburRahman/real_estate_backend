@@ -7,7 +7,7 @@ import { RequestData } from "../../../interfaces/common";
 import { GetAllGetQuery } from "../service/service.interface";
 
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const result = await MemberService.updateProfile(req as any);
+  const result = await MemberService.updateMyProfile(req as any);
   sendResponse(res, {
     statusCode: 200,
     success: true,

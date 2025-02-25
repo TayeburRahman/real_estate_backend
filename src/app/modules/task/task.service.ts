@@ -93,6 +93,7 @@ const assignTeamMember = async (payload: { memberId: Types.ObjectId; taskId: Typ
 
 const takenTaskOfTeamMember = async (user: IReqUser, taskId: Types.ObjectId) => {
   const { userId } = user as IReqUser;
+  console.log("====")
   const task = await Tasks.findById(taskId);
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
@@ -235,7 +236,7 @@ const viewTaskDetailsClient = async (taskId: string) => {
   return task;
 };
 
-const getCompletedTask = async (
+const getNewTasks = async (
   user: { userId: Types.ObjectId; authId: Types.ObjectId; role: string },
   query: { page?: number; limit?: number }
 ) => {
@@ -243,19 +244,42 @@ const getCompletedTask = async (
   const { page = 1, limit = 25 } = query;
   const skip = (page - 1) * limit;
 
-  let matchQuery: any = { status: "Completed" };
+  let matchQuery: any = { status: "Pending" };
 
   if (role === ENUM_USER_ROLE.MEMBER) {
-    matchQuery.memberId = { $in: userId };
+    matchQuery.schedule_memberId = { $in: userId };
   }
 
-  const taskQuery = Tasks.aggregate([
+  const taskQuery = await Tasks.aggregate([
     { $match: matchQuery },
     {
+      $lookup: {
+        from: "orders",
+        localField: "orderId",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    {
+      $lookup: {
+        from: "services",
+        localField: "serviceId",
+        foreignField: "_id",
+        as: "service",
+      },
+    },
+    { $unwind: { path: "$order", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$service", preserveNullAndEmptyArrays: true } },
+    {
       $project: {
-        finishFile: 1,
+        _id: 1,
+        orderId: 1,
+        "order.address": 1,
+        serviceId: 1,
+        "service.title": 1,
+        status: 1,
         createdAt: 1,
-      }
+      },
     },
     {
       $group: {
@@ -267,27 +291,54 @@ const getCompletedTask = async (
     { $sort: { _id: -1 } },
     {
       $facet: {
-        metadata: [{ $count: "total" }],
+        metadata: [{ $count: "total", }],
         data: [{ $skip: skip }, { $limit: limit }],
       },
     },
+    {
+      $addFields: {
+        metadata: { $arrayElemAt: ["$metadata", 0] },
+      },
+    },
+    {
+      $addFields: {
+        "metadata.limit": limit,
+        "metadata.page": page,
+      },
+    }
   ]);
 
-  const result = await taskQuery.exec();
+  const data = taskQuery?.length ? taskQuery[0] : taskQuery
 
-  const total = result[0].metadata.length > 0 ? result[0].metadata[0].total : 0;
-  const totalPages = Math.ceil(total / limit);
-
-  return {
-    result: result[0].data,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      perPage: limit,
-    },
-  };
+  return data;
 };
+
+const taskStatusUpdateSubmitted = async (payload: { taskId: string; status: string }) => {
+  const { taskId, status } = payload;
+
+  if (!Types.ObjectId.isValid(taskId)) {
+    throw new ApiError(400, "Invalid Task ID.");
+  }
+
+  if (status !== "Submitted") {
+    throw new ApiError(400, "Invalid status value, status will be Submitted.");
+  }
+
+  const updatedTask = await Tasks.findByIdAndUpdate(
+    taskId,
+    { status },
+    { new: true }
+  );
+
+  if (!updatedTask) {
+    throw new ApiError(404, "Task not found.");
+  }
+
+  return updatedTask;
+};
+
+export default taskStatusUpdateSubmitted;
+
 
 // ===============
 const addSourceFileOfTask = async (files: Express.Multer.File[], taskId: string) => {
@@ -468,7 +519,8 @@ export const TaskService = {
   getCommentOfTaskFiles,
   deleteTaskFiles,
   revisionsRequestTask,
-  getCompletedTask,
-  viewTaskDetailsClient
+  getNewTasks,
+  viewTaskDetailsClient,
+  taskStatusUpdateSubmitted
 };
 

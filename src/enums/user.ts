@@ -13,7 +13,7 @@ export enum ENUM_SOCKET_EVENT {
   MESSAGE_NEW_ORDER = "new-message-order",
   MESSAGE_GETALL_ORDER = "order-messages",
   CONVERSION = "conversion",
-  REVISIONS_MESSAGE = "messages",
+  REVISIONS_MESSAGE = "revision-messages",
   NOTIFICATION = "notification",
   NEW_NOTIFICATION = "new-notification",
   SEEN_NOTIFICATION = "seen-notification",
@@ -24,6 +24,7 @@ export enum ENUM_SOCKET_EVENT {
 
 export enum ENUM_TASK_STATUS {
   SUBMITTED = "Submitted",
+  PENDING = "Pending",
   SCHEDULED = "Scheduled",
   IN_PRODUCTION = "In-Production",
   DELIVERED = "Delivered",

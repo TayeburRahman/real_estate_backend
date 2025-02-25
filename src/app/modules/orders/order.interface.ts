@@ -60,6 +60,7 @@ export interface IOrder {
 export interface ITasks {
     orderId: Types.ObjectId;
     serviceId: Types.ObjectId;
+    schedule_memberId: Types.ObjectId[];
     memberId: Types.ObjectId[] | null;
     sourceFile?: {
         url: string;

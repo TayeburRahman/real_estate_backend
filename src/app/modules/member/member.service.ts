@@ -12,6 +12,8 @@ const updateMyProfile = async (req: RequestData) => {
   const { files, body: data } = req;
   const { authId, userId } = req.user
 
+  console.log("====dfdg======", data)
+
   const checkValidDriver = await Member.findById(userId);
   if (!checkValidDriver) {
     throw new ApiError(404, "You are not authorized");
@@ -32,7 +34,7 @@ const updateMyProfile = async (req: RequestData) => {
   const [auth, result] = await Promise.all([
     Auth.findByIdAndUpdate(
       authId,
-      { name: updatedUserData.name },
+      { address: updatedUserData.address, phone_number: updatedUserData.phone_number, name: updatedUserData.name, profile_image: updatedUserData.profile_image },
       {
         new: true,
       }
@@ -50,8 +52,6 @@ const updateProfile = async (req: RequestData) => {
   const { files, } = req;
   const data = req.body;
   const { authId, userId } = req.params as any;
-
-  console.log("=============", data);
 
   const checkValidDriver = await Member.findById(userId);
   if (!checkValidDriver) {

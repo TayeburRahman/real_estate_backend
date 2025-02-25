@@ -68,10 +68,10 @@ const MemberSchema = new Schema<IMember>(
       type: Boolean,
       default: false,
     },
-    do_production_work: {
-      type: Boolean,
-      default: false,
-    },
+    // do_production_work: {
+    //   type: Boolean,
+    //   default: false,
+    // },
     see_the_pricing: {
       type: Boolean,
       default: false,

@@ -388,12 +388,16 @@ const getAllGroupPriceDetails = async (groupId: string) => {
 };
 // ======================================
 const getAllClients = async (searchTerm: string) => {
-  const filter = searchTerm ? { name: { $regex: searchTerm, $options: 'i' } } : {};
+  const filter: any = { role: 'CLIENT' };
+
+  if (searchTerm) {
+    filter.name = { $regex: searchTerm, $options: 'i' };
+  }
 
   const result = await Client.find(filter)
-    .select('name profile_image authId _id')
+    .select('name profile_image authId _id');
 
-  return result
+  return result;
 };
 
 const getAllServicesWithoutPagination = async (searchTerm: string) => {

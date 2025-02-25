@@ -64,7 +64,6 @@ const getClientOrderInvoice = async (query: any, user: IReqUser) => {
     const userQuery = new QueryBuilder(Invoice.find({ clientId: query.clientId })
         .populate('orderIds', 'schedule totalAmount address')
         .select('totalAmount orderIds status date'), query)
-        // .search(["name", "email"])
         .filter()
         .sort()
         .paginate()
@@ -101,8 +100,8 @@ const createCheckoutSessionStripe = async (req: any) => {
 
         const unitAmount = Number(invoice.totalAmount) * 100;
 
+        console.log("=====", unitAmount)
 
-        console.log("invoice", invoice)
 
         let session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],

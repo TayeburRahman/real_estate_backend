@@ -30,6 +30,12 @@ const messageSchema = new mongoose.Schema<IMessage>(
     fileId: {
       type: Types.ObjectId,
     },
+    taskId: {
+      type: Types.ObjectId,
+      // ref: "Task"
+    },
+
+
   },
   {
     timestamps: true,
