@@ -308,7 +308,6 @@ const loginAccount = async (payload: LoginPayload) => {
   };
 };
 
-
 const forgotPass = async (payload: { email: string }) => {
   const user = await Auth.findOne(
     { email: payload.email },
@@ -596,7 +595,6 @@ cron.schedule("* * * * *", async () => {
   }
 });
 
-
 const deleteMyAccount = async (payload: { authId: Types.ObjectId }) => {
   const { authId } = payload;
 
@@ -630,8 +628,21 @@ const deleteMyAccount = async (payload: { authId: Types.ObjectId }) => {
   };
 };
 
+const getALLUsers = async (searchTerm: string) => {
+  let query = {};
 
+  if (searchTerm) {
+    query = {
+      $or: [
+        { email: { $regex: searchTerm, $options: "i" } },
+      ],
+    };
+  }
 
+  const users = await Auth.find(query).select('name email');
+
+  return users;
+}
 
 export const AuthService = {
   registrationAccount,
@@ -645,5 +656,6 @@ export const AuthService = {
   checkIsValidForgetActivationCode,
   resendCodeActivationAccount,
   resendCodeForgotAccount,
+  getALLUsers
 };
 

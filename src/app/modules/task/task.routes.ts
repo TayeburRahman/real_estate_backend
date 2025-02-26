@@ -6,7 +6,9 @@ import uploadC from '../../middlewares/cloudinaryUpload';
 
 const router = express.Router();
 
-router.get("/get-all", TaskController.getAllTasks);
+router.get("/get-all",
+    auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.getAllTasks);
 router.patch("/assign-team-member",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.assignTeamMember);
@@ -43,9 +45,6 @@ router.patch("/update-status-submitted",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.taskStatusUpdateSubmitted);
 
-
-
-
 // =========
 router.patch("/add-comment",
     auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
@@ -63,5 +62,10 @@ router.patch("/revisions",
 router.get("/view-details-client/:taskId",
     auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
     TaskController.viewTaskDetailsClient);
+// Dashboard Home=========================
+router.get("/get-count-of-status",
+    auth(ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+    TaskController.getStatusCounts);
+
 
 export const TaskRoutes = router;

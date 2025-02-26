@@ -62,6 +62,7 @@ const getAllMembers = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+
 export const MemberController = {
   myProfile,
   updateProfile,

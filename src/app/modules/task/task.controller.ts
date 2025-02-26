@@ -3,10 +3,12 @@ import sendResponse from "../../../shared/sendResponse";
 import { Request, Response } from 'express';
 import { TaskService } from "./task.service";
 import { IReqUser } from "../auth/auth.interface";
+import { GetAllOrderQuery } from "../orders/order.interface";
 
 const getAllTasks = catchAsync(async (req: Request, res: Response) => {
   const query = req.query as any;
-  const result = await TaskService.getAllTasks(query);
+  const user = req.user as IReqUser;
+  const result = await TaskService.getAllTasks(query, user);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -40,7 +42,8 @@ const takenTaskOfTeamMember = catchAsync(async (req: Request, res: Response) => 
 
 const getAllAssigned = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IReqUser;
-  const result = await TaskService.getAllAssigned(user);
+  const { page, limit } = req.query as GetAllOrderQuery;
+  const result = await TaskService.getAllAssigned(user, page as any, limit as any);
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -206,7 +209,17 @@ const taskStatusUpdateSubmitted = catchAsync(async (req: Request, res: Response)
     data: result,
   });
 });
-
+// Home Dashboard=================================
+const getStatusCounts = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IReqUser;
+  const result = await TaskService.getStatusCounts();
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get Status Counts Successfully",
+    data: result,
+  });
+});
 
 
 
@@ -228,5 +241,6 @@ export const TaskController = {
   revisionsRequestTask,
   viewTaskDetailsClient,
   getNewTasks,
-  taskStatusUpdateSubmitted
+  taskStatusUpdateSubmitted,
+  getStatusCounts
 };

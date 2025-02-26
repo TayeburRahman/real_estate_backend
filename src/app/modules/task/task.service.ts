@@ -7,74 +7,16 @@ import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from '../../../enums/user';
 import { IOrder, ITasks } from '../orders/order.interface';
 import { ICommentData } from './task.interface';
 import QueryBuilder from '../../../builder/QueryBuilder';
+import Member from '../member/member.model';
+import { IMember } from '../member/member.interface';
 
-const getAllTasks = async (query: any) => {
-  const tasks = await Tasks.aggregate([
-    {
-      $match: {
-        $or: [{ memberId: null }, { memberId: { $exists: false } }]
-      }
-    },
-    // Populate orderId (Only select address)
-    {
-      $lookup: {
-        from: "orders",
-        localField: "orderId",
-        foreignField: "_id",
-        as: "order"
-      }
-    },
-    {
-      $unwind: {
-        path: "$order",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    // Populate serviceId (Only select title)
-    {
-      $lookup: {
-        from: "services",
-        localField: "serviceId",
-        foreignField: "_id",
-        as: "service"
-      }
-    },
-    {
-      $unwind: {
-        path: "$service",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    // Select specific fields
-    {
-      $project: {
-        _id: 1,
-        orderId: 1,
-        "order.address": 1,
-        serviceId: 1,
-        "service.title": 1,
-        memberId: 1,
-        createdAt: 1
-      }
-    },
-    // Group by date
-    {
-      $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-        tasks: { $push: "$$ROOT" }
-      }
-    },
-    { $sort: { _id: 1 } }
-  ]);
 
-  return tasks;
-};
 
-const assignTeamMember = async (payload: { memberId: Types.ObjectId; taskId: Types.ObjectId }) => {
-  if (!payload.memberId || !payload.taskId) {
+const assignTeamMember = async (payload: { memberId: Types.ObjectId[]; taskId: Types.ObjectId }) => {
+  if (!payload.memberId.length || !payload.taskId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid request payload");
   }
-  // Notifications needed
+
   const task = await Tasks.findById(payload.taskId);
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
@@ -84,12 +26,20 @@ const assignTeamMember = async (payload: { memberId: Types.ObjectId; taskId: Typ
     task.memberId = [];
   }
 
-  task.memberId.push(payload.memberId);
+  const existingMembers = new Set(task.memberId.map(id => id.toString()));
+  const newMembers = payload.memberId.filter(id => !existingMembers.has(id.toString()));
+
+  if (newMembers.length) {
+    task.memberId.push(...newMembers);
+  }
+
+  task.status = "In-Production";
   task.assigned = true;
   await task.save();
 
   return task;
 };
+
 
 const takenTaskOfTeamMember = async (user: IReqUser, taskId: Types.ObjectId) => {
   const { userId } = user as IReqUser;
@@ -104,24 +54,148 @@ const takenTaskOfTeamMember = async (user: IReqUser, taskId: Types.ObjectId) => 
 
   task.memberId.push(userId);
   task.assigned = true;
+  task.status = "In-Production"
   await task.save();
 
   return task;
 };
 
-const getAllAssigned = async (user: IReqUser) => {
+const getAllAssigned = async (user: IReqUser, page: number = 1, limit: number = 3) => {
   const { userId, role } = user as IReqUser;
 
   let matchFilter: any = { assigned: true };
 
   if (role === ENUM_USER_ROLE.MEMBER) {
-    matchFilter.memberId = { $in: [new mongoose.Types.ObjectId(userId)] };
+    matchFilter.memberId = { $in: [new Types.ObjectId(userId)] };
   } else if (role !== ENUM_USER_ROLE.ADMIN && role !== ENUM_USER_ROLE.SUPER_ADMIN) {
     throw new ApiError(httpStatus.FORBIDDEN, "You are not authorized to perform this action");
   }
 
+  page = Number(page);
+  limit = Number(limit);
+  const skip = (page - 1) * limit;
+
+  console.log("==========", page, limit, skip)
+
+  const totalCount = await Tasks.countDocuments(matchFilter);
+  const totalPages = Math.ceil(totalCount / limit);
+
   const result = await Tasks.aggregate([
     { $match: matchFilter },
+    {
+      $lookup: {
+        from: "orders",
+        localField: "orderId",
+        foreignField: "_id",
+        as: "order"
+      }
+    },
+    { $unwind: { path: "$order", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "services",
+        localField: "serviceId",
+        foreignField: "_id",
+        as: "service"
+      }
+    },
+    { $unwind: { path: "$service", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "members",
+        localField: "memberId",
+        foreignField: "_id",
+        as: "members"
+      }
+    },
+    {
+      $addFields: {
+        createdAt: { $ifNull: ["$createdAt", new Date()] }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        orderId: 1,
+        "order.address": 1,
+        serviceId: 1,
+        "service.title": 1,
+        members: {
+          $map: {
+            input: "$members",
+            as: "member",
+            in: {
+              _id: "$$member._id",
+              name: "$$member.name",
+              email: "$$member.email"
+            }
+          }
+        },
+        status: 1,
+        createdAt: 1
+      }
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        tasks: { $push: "$$ROOT" }
+      }
+    },
+    { $sort: { "_id": -1 } },
+
+    { $skip: skip },
+    { $limit: limit }
+  ]);
+
+  return {
+    metadata: {
+      total: totalCount,
+      limit,
+      page,
+      totalPages
+    },
+    tasksByDate: result
+  };
+};
+
+const completeTaskUpdateStatus = async (taskId: string) => {
+  const task = await Tasks.findById(taskId);
+  if (!task) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
+  }
+  // Notifications needed
+  const TaskStatus = {
+    PENDING: "In-Production",
+    COMPLETE: "Delivered"
+  }
+  task.status = task.status === TaskStatus.COMPLETE ? TaskStatus.PENDING : TaskStatus.COMPLETE;
+  await task.save();
+  return task.status;
+};
+
+const getAllTasks = async (query: any, user: IReqUser) => {
+  const { userId, role } = user;
+
+  let matchConditions: any = {
+    status: "Submitted",
+  };
+
+
+  if (role === ENUM_USER_ROLE.MEMBER) {
+    const member = await Member.findById(userId).lean() as IMember;
+    if (!member) throw new Error("Member not found");
+
+    if (member.serviceId && member.serviceId.length > 0) {
+      matchConditions.serviceId = { $in: member.serviceId.map(id => new Types.ObjectId(id)) };
+    } else {
+      return [];
+    }
+  }
+
+  const tasks = await Tasks.aggregate([
+    {
+      $match: matchConditions
+    },
     {
       $lookup: {
         from: "orders",
@@ -151,19 +225,14 @@ const getAllAssigned = async (user: IReqUser) => {
       }
     },
     {
-      $addFields: {
-        createdAt: { $ifNull: ["$createdAt", new Date()] }
-      }
-    },
-    {
       $project: {
         _id: 1,
         orderId: 1,
         "order.address": 1,
         serviceId: 1,
         "service.title": 1,
-        status: 1,
         memberId: 1,
+        status: 1,
         createdAt: 1
       }
     },
@@ -173,47 +242,31 @@ const getAllAssigned = async (user: IReqUser) => {
         tasks: { $push: "$$ROOT" }
       }
     },
-    {
-      $sort: { "_id": 1 }
-    }
+    { $sort: { _id: 1 } }
   ]);
 
-  return result;
-};
-
-const completeTaskUpdateStatus = async (taskId: string) => {
-  const task = await Tasks.findById(taskId);
-  if (!task) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
-  }
-  // Notifications needed
-  const TaskStatus = {
-    PENDING: "Pending",
-    COMPLETE: "Completed"
-  }
-  task.status = task.status === TaskStatus.COMPLETE ? TaskStatus.PENDING : TaskStatus.COMPLETE;
-  await task.save();
-  return task.status;
+  return tasks;
 };
 
 const rejectTask = async (taskId: string, user: IReqUser, payload: any) => {
   const { memberId, reason } = payload || {};
-  // Notifications needed
+
   if (!memberId || !reason) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid request payload");
   }
 
-  const task = await Tasks.findById(taskId);
+  const task: any = await Tasks.findById(taskId) as ITasks;
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, "Task not found");
   }
 
-  if (Array.isArray(task.memberId)) {
-    task.memberId = task.memberId.filter((id) => id.toString() !== memberId);
-  }
 
-  if (!task.memberId?.length) {
+  task.memberId = task.memberId.filter((id: any) => id.toString() !== memberId.toString());
+  if (task.memberId.length === 0) {
+
     task.assigned = false;
+    task.status = "Submitted";
+    console.log("===tasks", task);
   }
 
   await task.save();
@@ -244,10 +297,10 @@ const getNewTasks = async (
   const { page = 1, limit = 25 } = query;
   const skip = (page - 1) * limit;
 
-  let matchQuery: any = { status: "Pending" };
+  let matchQuery: any = {};
 
   if (role === ENUM_USER_ROLE.MEMBER) {
-    matchQuery.schedule_memberId = { $in: userId };
+    matchQuery.schedule_memberId = { $in: [new Types.ObjectId(userId)] };
   }
 
   const taskQuery = await Tasks.aggregate([
@@ -320,8 +373,8 @@ const taskStatusUpdateSubmitted = async (payload: { taskId: string; status: stri
     throw new ApiError(400, "Invalid Task ID.");
   }
 
-  if (status !== "Submitted") {
-    throw new ApiError(400, "Invalid status value, status will be Submitted.");
+  if (status !== "Submitted" && status !== "Pending") {
+    throw new ApiError(400, "Invalid status value, status must be 'Submitted' or 'Pending'.");
   }
 
   const updatedTask = await Tasks.findByIdAndUpdate(
@@ -336,10 +389,6 @@ const taskStatusUpdateSubmitted = async (payload: { taskId: string; status: stri
 
   return updatedTask;
 };
-
-export default taskStatusUpdateSubmitted;
-
-
 // ===============
 const addSourceFileOfTask = async (files: Express.Multer.File[], taskId: string) => {
   if (!files || files.length === 0) {
@@ -417,8 +466,6 @@ const addCommentOfTaskFiles = async (
 const getCommentOfTaskFiles = async (query: { taskId: string, fileId?: string }) => {
   const { taskId, fileId } = query;
 
-  console.log("========", taskId, fileId);
-
   if (!taskId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Task ID is required");
   }
@@ -461,7 +508,7 @@ const updateStatusTask = async (query: { status: string; taskId: string }) => {
   const orderId = task.orderId;
   const allTasksOfOrder = await Tasks.find({ orderId });
 
-  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.COMPLETED);
+  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.DELIVERED);
 
   const order = await Orders.findById(orderId) as IOrder;
   if (allCompleted) {
@@ -501,8 +548,31 @@ const deleteTaskFiles = async (types: string, fileId: string, taskId: string) =>
 };
 
 const revisionsRequestTask = async (payload: { text: string }, query: { taskId: string, fileId: string }) => {
-
 }
+// =Dashboard Home Task=======================
+const getStatusCounts = async () => {
+  const statusCounts = await Tasks.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const allStatuses = Object.values(ENUM_TASK_STATUS).reduce((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {} as Record<string, number>);
+
+  statusCounts.forEach(({ _id, count }) => {
+    allStatuses[_id] = count;
+  });
+
+  return allStatuses;
+};
+
+
 
 export const TaskService = {
   getAllTasks,
@@ -521,6 +591,7 @@ export const TaskService = {
   revisionsRequestTask,
   getNewTasks,
   viewTaskDetailsClient,
-  taskStatusUpdateSubmitted
+  taskStatusUpdateSubmitted,
+  getStatusCounts
 };
 

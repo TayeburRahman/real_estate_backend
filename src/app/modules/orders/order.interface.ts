@@ -121,4 +121,24 @@ export interface INotes {
     date?: Date;
 }
 
+// ============ 
+
+export interface IOrderResponse {
+    _id: Types.ObjectId;
+    orderId: Types.ObjectId;
+    client: {
+        name: string;
+        email: string;
+    };
+    address: string;
+    totalTasks: number;
+    status: string;
+    createdAt: Date;
+}
+
+export interface IPaginationMeta {
+    totalOrders: number;
+    currentPage: number;
+    totalPages: number;
+}
 

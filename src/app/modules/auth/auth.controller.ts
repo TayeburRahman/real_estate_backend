@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import sendResponse from '../../../shared/sendResponse';
 import config from '../../../config';
 import { IReqUser } from './auth.interface';
+import { GetAllGetQuery } from '../service/service.interface';
 
 const registrationAccount = catchAsync(async (req: Request, res: Response) => {
   const { role } = await AuthService.registrationAccount(req.body);
@@ -142,7 +143,17 @@ const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
+const getALLUsers = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as GetAllGetQuery;
+  const searchTerm = query?.searchTerm as string;
+  const result = await AuthService.getALLUsers(searchTerm);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Get successfully",
+    data: result,
+  });
+});
 
 export const AuthController = {
   registrationAccount,
@@ -156,5 +167,6 @@ export const AuthController = {
   resendCodeActivationAccount,
   resendCodeForgotAccount,
   deleteMyAccount,
-  addClientAgents
+  addClientAgents,
+  getALLUsers
 };

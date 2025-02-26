@@ -105,11 +105,10 @@ const myProfile = async (user: { userId: Types.ObjectId }) => {
 const getAllMembersWithOutPagination = async (query: GetAllGetQuery) => {
   const { searchTerm } = query;
 
-  const filter: any = { role: "MEMBER" };
+  const filter: any = {};
 
   if (searchTerm) {
     filter.$and = [
-      { role: "MEMBER" },
       {
         $or: [
           { name: { $regex: searchTerm, $options: "i" } },

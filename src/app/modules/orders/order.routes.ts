@@ -31,6 +31,38 @@ router.patch("/add-notes/:orderId",
         ENUM_USER_ROLE.SUPER_ADMIN
     ), OrdersController.addOrderNotes);
 router.get("/get/:orderId", OrdersController.getSignalOrder);
+// ==================
+router.get("/get-recent-orders",
+    auth(
+        ENUM_USER_ROLE.MEMBER,
+        ENUM_USER_ROLE.ADMIN,
+        ENUM_USER_ROLE.SUPER_ADMIN
+    ), OrdersController.getRecentOrder);
+router.get("/get-today-submit-order",
+    auth(
+        ENUM_USER_ROLE.MEMBER,
+        ENUM_USER_ROLE.ADMIN,
+        ENUM_USER_ROLE.SUPER_ADMIN
+    ), OrdersController.needSubmitToday);
+router.get("/get-order-grows",
+    auth(
+        ENUM_USER_ROLE.MEMBER,
+        ENUM_USER_ROLE.ADMIN,
+        ENUM_USER_ROLE.SUPER_ADMIN
+    ), OrdersController.getOrderGrows);
+
+router.get("/get-order-status-count",
+    auth(
+        ENUM_USER_ROLE.MEMBER,
+        ENUM_USER_ROLE.ADMIN,
+        ENUM_USER_ROLE.SUPER_ADMIN
+    ), OrdersController.getOrderStatusCount);
+
+
+
+
+
+
 
 
 export const OrderRoutes = router;

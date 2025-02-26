@@ -150,7 +150,7 @@ const taskSchema = new Schema<ITasks>({
     status: {
         type: String,
         enum: ENUM_TASK_STATUS,
-        default: 'Submitted',
+        default: 'Pending',
     },
 }, { timestamps: true });
 

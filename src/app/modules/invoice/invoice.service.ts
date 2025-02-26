@@ -106,7 +106,7 @@ const createCheckoutSessionStripe = async (req: any) => {
         let session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'payment',
-            success_url: `${DOMAIN_URL}/payment/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `${DOMAIN_URL}/dashboard/invoice-order?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${DOMAIN_URL}/cancel`,
             customer_email: `${user?.email}`,
             client_reference_id: invoiceId,
@@ -139,6 +139,8 @@ const createCheckoutSessionStripe = async (req: any) => {
 const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
     const sessionId = req.query.session_id;
 
+    console.log("=====cc=====", sessionId)
+
     if (!sessionId) {
         return { status: "failed", message: "Missing session ID in the request." };
     }
@@ -166,7 +168,7 @@ const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
         }
 
         for (const order of invoice.orderIds) {
-            const update = await Orders.findByIdAndUpdate(order, { $set: { paymentStatus: 'Invoiced' } });
+            const update = await Orders.findByIdAndUpdate(order, { $set: { paymentStatus: 'Paid' } });
             console.log(update)
         }
 

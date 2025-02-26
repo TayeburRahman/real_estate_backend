@@ -126,7 +126,44 @@ const getSignalOrder = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getRecentOrder = catchAsync(async (req: Request, res: Response) => {
 
+    const query = req.query as GetAllOrderQuery;
+
+    const result = await OrdersService.getRecentOrders(query);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get successfully",
+        data: result,
+    });
+})
+
+const needSubmitToday = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await OrdersService.needSubmitToday();
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get successfully",
+        data: result,
+    });
+})
+
+const getOrderGrows = catchAsync(async (req: Request, res: Response) => {
+    const year = req.query.year || 2025;
+
+    const result = await OrdersService.getOrderGrows(year as number);
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get successfully",
+        data: result,
+    });
+})
 
 export const OrdersController = {
     createNewOrder,
@@ -137,5 +174,8 @@ export const OrdersController = {
     getAllOrders,
     getOrderServices,
     addOrderNotes,
-    getSignalOrder
+    getSignalOrder,
+    getRecentOrder,
+    needSubmitToday,
+    getOrderGrows
 }

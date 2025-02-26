@@ -335,7 +335,7 @@ const getAllOrders = async (query: GetAllOrderQuery) => {
             // @ts-ignore
             totalPages: Math.ceil((totalCount[0]?.total || 0) / limit),
         },
-        data: orders
+        data: orders.reverse()
     };
 };
 
@@ -465,7 +465,224 @@ const updateStatusOrder = async (query: { status: string; taskId: string }) => {
 
     // return task.status;
 };
-// Invoice===================================
+
+// Home Dashboard===================================
+const getRecentOrders = async (query: GetAllOrderQuery) => {
+    const { searchTerm, status, page = 1, limit = 10 } = query;
+
+    const orders = await Orders.aggregate([
+        {
+            $match: status ? { status } : {}
+        },
+        {
+            $lookup: {
+                from: "clients",
+                localField: "clientId",
+                foreignField: "_id",
+                as: "client"
+            }
+        },
+        {
+            $unwind: {
+                path: "$client",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $lookup: {
+                from: "tasks",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "tasks"
+            }
+        },
+        {
+            $addFields: {
+                totalTasks: { $size: "$tasks" }
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                orderId: "$_id",
+                "client.name": 1,
+                "client.profile_image": 1,
+                address: 1,
+                totalTasks: 1,
+                status: 1,
+                createdAt: 1
+            }
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: (Number(page) - 1) * Number(limit) },
+        { $limit: Number(limit) }
+    ]);
+
+    const totalOrders = await Orders.countDocuments(status ? { status } : {});
+
+    return {
+        data: orders,
+        meta: {
+            totalOrders,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(totalOrders / Number(limit))
+        }
+    };
+};
+
+const needSubmitToday = async () => {
+    const now = new Date();
+
+    const netherlandsOffset = 1 * 60 * 60 * 1000;
+    const today = new Date(now.getTime() + netherlandsOffset);
+    today.setUTCHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(today.getUTCDate() + 1);
+
+    console.log(today, tomorrow);
+
+    const todayOrders = await Orders.find({
+        "schedule.date": { $gte: today, $lt: tomorrow }
+    }).populate("")
+        .select("schedule.date status address ")
+
+    if (!todayOrders.length) return todayOrders;
+
+    const orderIds = todayOrders.map(order => order._id);
+    const tasks = await Tasks.aggregate([
+        { $match: { orderId: { $in: orderIds } } },
+        {
+            $group: {
+                _id: "$orderId",
+                totalTasks: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const taskCounts = tasks.reduce((acc, task) => {
+        acc[task._id.toString()] = task.totalTasks;
+        return acc;
+    }, {});
+
+
+    return todayOrders.map(order => ({
+        order,
+        totalTasks: taskCounts[order._id.toString()] || 0
+    }));
+
+};
+
+const getYearRange = (year: any) => {
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
+    return { startDate, endDate };
+};
+
+const getOrderGrows = async (year?: number) => {
+    try {
+        const currentYear = new Date().getFullYear();
+        const selectedYear = year || currentYear;
+
+        const { startDate, endDate } = getYearRange(selectedYear);
+
+        const monthlyDriverGrowth = await Orders.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: startDate,
+                        $lt: endDate,
+                    },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: '$createdAt' },
+                        year: { $year: '$createdAt' },
+                    },
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    month: '$_id.month',
+                    year: '$_id.year',
+                    count: 1,
+                },
+            },
+            {
+                $sort: { month: 1 },
+            },
+        ]);
+
+        const months = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+        ];
+
+        const result = Array.from({ length: 12 }, (_, i) => {
+            const monthData = monthlyDriverGrowth.find(
+                data => data.month === i + 1,
+            ) || {
+                month: i + 1,
+                count: 0,
+                year: selectedYear,
+            };
+            return {
+                ...monthData,
+                month: months[i],
+            };
+        });
+
+        return {
+            year: selectedYear,
+            data: result,
+        };
+    } catch (error: any) {
+        console.error('Error in getDriverGrowth function: ', error);
+        throw new ApiError(404, error.message);;
+    }
+};
+
+const getOrderStatusCount = async () => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Europe/Amsterdam",
+    });
+
+    const now = new Date();
+    const netherlandsDate = new Date(formatter.format(now));
+    netherlandsDate.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(netherlandsDate);
+    tomorrow.setDate(netherlandsDate.getDate() + 1);
+
+    const todayOrdersCount = await Orders.countDocuments({
+        "schedule.date": { $gte: netherlandsDate, $lt: tomorrow },
+    });
+
+    const pendingOrdersCount = await Orders.countDocuments({
+        status: "Progress",
+    });
+
+    return {
+        todayOrders: todayOrdersCount,
+        pendingOrders: pendingOrdersCount,
+    };
+};
+
 
 export const OrdersService = {
     createNewOrder,
@@ -477,5 +694,8 @@ export const OrdersService = {
     getOrderServices,
     addOrderNotes,
     getSignalOrder,
-    updateStatusOrder
+    updateStatusOrder,
+    getRecentOrders,
+    needSubmitToday,
+    getOrderGrows
 }

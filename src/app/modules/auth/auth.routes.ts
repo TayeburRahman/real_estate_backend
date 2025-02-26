@@ -51,21 +51,26 @@ router.patch(
 // //------ Admin Router ---------------
 router.get(
   "/member/profile",
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.SUPER_ADMIN),
   MemberController.myProfile
 )
 router.patch(
   "/member/edit-profile",
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.SUPER_ADMIN),
   uploadFile(),
   MemberController.updateMyProfile
-)
+);
 router.patch(
   "/members/edit-profile/memberId/:userId/authId/:authId",
-  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.MEMBER, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   uploadFile(),
   MemberController.updateProfile
-)
+);
+// ========================
+router.get(
+  "/get-all-user",
+  AuthController.getALLUsers
+);
 
 
 
