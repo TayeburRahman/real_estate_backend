@@ -7,9 +7,6 @@ const notificationSchema = new Schema<INotification>(
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
-    admin: {
-      type: Boolean,
-    },
     title: {
       type: String,
       required: true,
@@ -18,10 +15,18 @@ const notificationSchema = new Schema<INotification>(
       type: String,
       required: true,
     },
+    types: {
+      type: String,
+      enum: ['member', 'client'],
+    },
     status: {
       type: Boolean,
       default: false,
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    }
     // plan_id: {
     //   type: Schema.Types.ObjectId,
     //   ref: 'Plan',

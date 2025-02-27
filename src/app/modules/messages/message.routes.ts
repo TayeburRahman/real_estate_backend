@@ -21,10 +21,10 @@ const router = express.Router();
 //   auth(ENUM_USER_ROLE.USER, ENUM_USER_ROLE.USER),
 //   messageController.conversationUser,
 // );
-// router.get(
-//   '/get-message/:id',
-//   auth(ENUM_USER_ROLE.USER, ENUM_USER_ROLE.USER),
-//   messageController.getMessages,
-// );
+router.patch(
+    '/favorite',
+    auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN, ENUM_USER_ROLE.MEMBER),
+    messageController.addOrRemoveFavoriteList,
+);
 
 export const MessageRoutes = router;

@@ -9,6 +9,9 @@ import QueryBuilder from "../../../builder/QueryBuilder";
 import config from "../../../config";
 import Client from "../client/client.model";
 import { IClient } from "../client/client.interface";
+import { NotificationService } from "../notifications/notifications.service";
+import { sendMessageEmail } from "../../../mails/sendMessageEmail";
+import { invoiceEmailHtmlContent } from "./invoiceEmailHtmlContent";
 const stripe = require("stripe")(config.stripe.stripe_secret_key);
 const DOMAIN_URL = process.env.RESET_PASS_UI_LINK;
 
@@ -46,6 +49,28 @@ const createOrderInvoice = async (payload: IInvoice, user: IReqUser) => {
         });
 
         await newInvoice.save();
+
+        await NotificationService.sendNotification({
+            types: "client",
+            user: payload.clientId,
+            message: "An invoice has been generated for your orders. Please review the details in your account invoice.",
+            title: "Invoice Created"
+        });
+        const client = await Client.findById(payload.clientId)
+        if (client?.email_invoice) {
+            await sendMessageEmail(
+                client.email as string,
+                "Invoice Notification",
+                invoiceEmailHtmlContent({
+                    name: client.name,
+                    invoiceNumber: newInvoice._id.toString(),
+                    totalAmount: payload.totalAmount.toString(),
+                    dueDate: new Date(newInvoice.date).toLocaleDateString(),
+                    totalOrder: orders.length.toString()
+                })
+            );
+        }
+
 
         return newInvoice;
     } catch (error: any) {
@@ -100,7 +125,6 @@ const createCheckoutSessionStripe = async (req: any) => {
 
         const unitAmount = Number(invoice.totalAmount) * 100;
 
-        console.log("=====", unitAmount)
 
 
         let session = await stripe.checkout.sessions.create({
@@ -138,8 +162,6 @@ const createCheckoutSessionStripe = async (req: any) => {
 
 const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
     const sessionId = req.query.session_id;
-
-    console.log("=====cc=====", sessionId)
 
     if (!sessionId) {
         return { status: "failed", message: "Missing session ID in the request." };
@@ -194,8 +216,6 @@ const stripeCheckAndUpdateStatusSuccess = async (req: any) => {
         };
 
         const newTransaction = await Transaction.create(transactionData);
-
-        console.log("========", newTransaction)
 
         return { status: "success", result: newTransaction };
 

@@ -9,7 +9,7 @@ import { ICommentData } from './task.interface';
 import QueryBuilder from '../../../builder/QueryBuilder';
 import Member from '../member/member.model';
 import { IMember } from '../member/member.interface';
-
+import { NotificationService } from '../notifications/notifications.service';
 
 
 const assignTeamMember = async (payload: { memberId: Types.ObjectId[]; taskId: Types.ObjectId }) => {
@@ -39,7 +39,6 @@ const assignTeamMember = async (payload: { memberId: Types.ObjectId[]; taskId: T
 
   return task;
 };
-
 
 const takenTaskOfTeamMember = async (user: IReqUser, taskId: Types.ObjectId) => {
   const { userId } = user as IReqUser;
@@ -170,6 +169,28 @@ const completeTaskUpdateStatus = async (taskId: string) => {
   }
   task.status = task.status === TaskStatus.COMPLETE ? TaskStatus.PENDING : TaskStatus.COMPLETE;
   await task.save();
+
+  const orderId = task.orderId;
+  const allTasksOfOrder = await Tasks.find({ orderId });
+
+  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.DELIVERED);
+
+  const order = await Orders.findById(orderId) as any;
+  if (allCompleted) {
+    order.status = 'Completed';
+    // @ts-ignore;
+    await order.save();
+
+    await NotificationService.sendNotification({
+      types: "client",
+      orderId: order._id,
+      user: order?.clientId,
+      title: "Order Delivered",
+      message: `Your order #${order._id} has been successfully Delivered. Thank you for choosing our service!`
+    });
+  }
+
+
   return task.status;
 };
 
@@ -299,8 +320,6 @@ const getNewTasks = async (
 
   let matchQuery: any = {};
 
-  console.log("role=======", role, userId)
-
   if (role === ENUM_USER_ROLE.MEMBER) {
     matchQuery.schedule_memberId = { $in: [new Types.ObjectId(userId)] };
   }
@@ -391,6 +410,7 @@ const taskStatusUpdateSubmitted = async (payload: { taskId: string; status: stri
 
   return updatedTask;
 };
+
 // ===============
 const addSourceFileOfTask = async (files: Express.Multer.File[], taskId: string) => {
   if (!files || files.length === 0) {
@@ -510,13 +530,21 @@ const updateStatusTask = async (query: { status: string; taskId: string }) => {
   const orderId = task.orderId;
   const allTasksOfOrder = await Tasks.find({ orderId });
 
-  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.DELIVERED);
+  const allCompleted = allTasksOfOrder.every((task) => task.status === ENUM_TASK_STATUS.COMPLETED);
 
-  const order = await Orders.findById(orderId) as IOrder;
+  const order = await Orders.findById(orderId) as any;
+  console.log("====all====", allTasksOfOrder)
   if (allCompleted) {
     order.status = 'Completed';
-    // @ts-ignore
+    // @ts-ignore;
     await order.save();
+    await NotificationService.sendNotification({
+      types: "client",
+      orderId: order._id,
+      user: order?.clientId,
+      title: "Order Completed",
+      message: `Your order #${order._id} has been successfully completed. Thank you for choosing our service!`
+    });
   }
 
   return task.status;

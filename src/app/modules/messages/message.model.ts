@@ -21,6 +21,9 @@ const messageSchema = new mongoose.Schema<IMessage>(
       type: String,
       required: true,
     },
+    subject: {
+      type: String,
+    },
     message_img: {
       type: String,
     },

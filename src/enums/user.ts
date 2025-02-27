@@ -9,10 +9,11 @@ export enum ENUM_USER_ROLE {
 
 export enum ENUM_SOCKET_EVENT {
   CONNECT = "connection",
-  MESSAGE_NEW = "new-message",
+  MESSAGE_EMAIL_NEW = "new-email-message",
+  MESSAGE_GETALL = "message-getall",
   MESSAGE_NEW_ORDER = "new-message-order",
   MESSAGE_GETALL_ORDER = "order-messages",
-  CONVERSION = "conversion",
+  CONVERSION_LIST = "conversion-list",
   REVISIONS_MESSAGE = "revision-messages",
   NOTIFICATION = "notification",
   NEW_NOTIFICATION = "new-notification",

@@ -10,9 +10,7 @@ import { IReqUser } from '../auth/auth.interface';
 
 const updateMyProfile = async (req: RequestData) => {
   const { files, body: data } = req;
-  const { authId, userId } = req.user
-
-  console.log("====dfdg======", data)
+  const { authId, userId } = req.user;
 
   const checkValidDriver = await Member.findById(userId);
   if (!checkValidDriver) {

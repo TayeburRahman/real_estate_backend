@@ -13,6 +13,7 @@ export type IMessage = {
   senderId: Types.ObjectId | IAuth;
   receiverId: Types.ObjectId | IAuth;
   conversationId: Types.ObjectId | IConversation;
+  subject: string;
   message_img: string;
   message: string;
   externalModelType: string;

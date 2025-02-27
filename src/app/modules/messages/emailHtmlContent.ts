@@ -1,7 +1,7 @@
 interface ResetEmailTemplateData {
-    name: string;
-    verifyCode: string;
-    verifyExpire: number;
+  name: string;
+  verifyCode: string;
+  verifyExpire: number;
 }
 
 const emailHtmlContent = (data: ResetEmailTemplateData): string => `

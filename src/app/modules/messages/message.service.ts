@@ -4,6 +4,8 @@ import Conversation from './conversation.model';
 import Message from './message.model';
 import ApiError from '../../../errors/ApiError';
 import User from '../auth/auth.model';
+import { IReqUser } from '../auth/auth.interface';
+import httpStatus from 'http-status';
 
 //* One to one conversation
 // const sendMessage = async (req: Request) => {
@@ -148,8 +150,45 @@ const conversationUser = async () => {
   return conversationsWithParticipants;
 };
 
+const addOrRemoveFavoriteList = async (user: IReqUser, conversationId: string, types: string) => {
+
+  if (!types || !conversationId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid request payload');
+  }
+
+  if (types === "add") {
+    const conversation = await Conversation.findByIdAndUpdate(
+      conversationId,
+      { $addToSet: { favorite: user.authId } },
+      { new: true },
+    ).populate('favorite');
+
+    return conversation;
+  } else if (types === "remove") {
+    const conversation = await Conversation.findByIdAndUpdate(
+      conversationId,
+      { $addToSet: { favorite: user.authId } },
+      { new: true },
+    ).populate('favorite');
+
+    return conversation;
+  }
+  else {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid request payload');
+  }
+}
+
+const getFavoriteList = async (user: IReqUser) => {
+
+  const conversation = await Conversation.find({ favorite: { $in: user.authId } }).populate('favorite');
+
+  return conversation;
+}
+
 export const messageService = {
+  addOrRemoveFavoriteList,
   sendMessage,
   getMessages,
   conversationUser,
+  getFavoriteList
 };

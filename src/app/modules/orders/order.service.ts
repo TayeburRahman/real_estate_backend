@@ -6,6 +6,7 @@ import { Types } from "mongoose";
 import { Package, PricingGroup } from "../service/service.model";
 import { IReqUser } from "../auth/auth.interface";
 import { ENUM_TASK_STATUS, ENUM_USER_ROLE } from "../../../enums/user";
+import { NotificationService } from "../notifications/notifications.service";
 
 
 const createNewOrder = async (user: IReqUser, payload: IOrder, files: Express.Multer.File[]) => {
@@ -65,6 +66,14 @@ const createNewOrder = async (user: IReqUser, payload: IOrder, files: Express.Mu
         // Create tasks and update order
         const { taskIds } = await createTasks(Array.from(uniqueServices), order._id);
         const updatedOrder = await Orders.findByIdAndUpdate(order._id, { taskIds }, { new: true });
+
+        await NotificationService.sendNotification({
+            types: "client",
+            orderId: order._id,
+            user: payload?.clientId,
+            message: `Your order #${order._id} has been successfully placed. We'll notify you once it's processed.`,
+            title: "New Order Created"
+        });
 
         return { data: updatedOrder, taskIds };
     } catch (error: any) {
@@ -222,6 +231,14 @@ const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => 
     }
     const { date, start_time, end_time, memberId } = payload;
     const scheduleDate = new Date(date);
+    let title = "Scheduled Order";
+    let message = `Order has been scheduled for ${scheduleDate.toDateString()}.`;
+
+    if (order?.schedule?.date) {
+        title = "Rescheduled Order";
+        message = `Your order has been rescheduled to ${scheduleDate.toDateString()}.`;
+    }
+
 
     const result = await Orders.findByIdAndUpdate(orderId, {
         $set: {
@@ -242,6 +259,24 @@ const setScheduledTime = async (orderId: Types.ObjectId, payload: ISchedule) => 
                 status: "Scheduled"
             }
         });
+
+
+    await NotificationService.sendNotification({
+        types: "client",
+        orderId: order._id,
+        user: order?.clientId,
+        message: message,
+        title: title
+    });
+
+    await NotificationService.sendNotification({
+        types: "member",
+        orderId: order._id,
+        user: memberId,
+        message: message,
+        isAdmin: true,
+        title: title
+    });
 
     return result;
 }

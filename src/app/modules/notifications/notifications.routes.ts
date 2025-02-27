@@ -6,29 +6,28 @@ import { ENUM_USER_ROLE } from '../../../enums/user';
 const router = express.Router();
 
 router.get(
-  '/get-all-notifications',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  NotificationController.getNotifications,
+  '/get-admin-notifications',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.SUPER_ADMIN),
+  NotificationController.getAdminNotifications
 );
 router.get(
-  '/my-notifications',
-  auth(ENUM_USER_ROLE.USER),
-  NotificationController.myNotification,
+  '/get-client-notifications',
+  auth(ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT),
+  NotificationController.clientNotification
 );
 router.patch(
-  '/update-notification',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  NotificationController.updateAll,
+  '/seen-notification',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN, ENUM_USER_ROLE.CLIENT, ENUM_USER_ROLE.AGENT, ENUM_USER_ROLE.MEMBER),
+  NotificationController.seenNotifications
 );
 router.patch(
   '/update-notification/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  NotificationController.updateNotification,
+  NotificationController.updateNotification
 );
 router.delete(
   '/delete/:id',
-  auth(ENUM_USER_ROLE.ADMIN),
-  NotificationController.deleteNotifications,
+  NotificationController.deleteNotifications
 );
 
 export const NotificationRoutes = router;

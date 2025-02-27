@@ -5,9 +5,10 @@ import { NotificationService } from './notifications.service';
 import { IReqUser } from '../auth/auth.interface';
 
 //get notification only for admin
-const getNotifications: RequestHandler = catchAsync(
+const getAdminNotifications: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await NotificationService.getNotifications();
+    const user = req.user as IReqUser;
+    const result = await NotificationService.getAdminNotifications(user);
     sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -28,9 +29,10 @@ const updateNotification: RequestHandler = catchAsync(
     });
   },
 );
-const updateAll: RequestHandler = catchAsync(
+const seenNotifications: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await NotificationService.updateAll();
+    const user = req.user as IReqUser;
+    const result = await NotificationService.seenNotifications(user);
     sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -39,11 +41,10 @@ const updateAll: RequestHandler = catchAsync(
     });
   },
 );
-const myNotification: RequestHandler = catchAsync(
+const clientNotification: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await NotificationService.myNotification(
-      req.user as IReqUser,
-    );
+    const query = req.query as any;
+    const result = await NotificationService.clientNotification(query);
     sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -66,9 +67,9 @@ const deleteNotifications: RequestHandler = catchAsync(
 );
 
 export const NotificationController = {
-  getNotifications,
+  getAdminNotifications,
   updateNotification,
-  myNotification,
-  updateAll,
+  clientNotification,
+  seenNotifications,
   deleteNotifications,
 };

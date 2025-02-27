@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import { ENUM_SOCKET_EVENT } from "../../../enums/user";
 import ApiError from "../../../errors/ApiError";
 import Conversation from "./conversation.model";
@@ -12,6 +11,87 @@ const handleMessageData = async (
     onlineUsers: any,
 ): Promise<void> => {
 
+    // Get Conversation All Messages
+    socket.on(ENUM_SOCKET_EVENT.MESSAGE_GETALL, async (data: {
+        receiverId: string,
+        page: number,
+    }) => {
+        const { receiverId, page } = data as any;
+
+        if (!receiverId) {
+            socket.emit('error', {
+                message: 'SenderId not found!',
+            });
+            return;
+        }
+        const conversation = await Conversation.findOne({
+            senderId, receiverId
+        }).populate({
+            path: 'messages',
+            populate: {
+                path: 'senderId',
+                select: 'name email profile_image',
+            },
+            options: {
+                sort: { createdAt: -1 },
+                skip: (page - 1) * 20,
+                limit: 20,
+            },
+        });
+
+        if (!conversation) {
+            return 'Conversation not found';
+        }
+
+        if (conversation) {
+            await emitMessage(senderId, conversation, ENUM_SOCKET_EVENT.MESSAGE_GETALL)
+        }
+    },
+    );
+    // Send Message for Email
+    socket.on(ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW, async (data: { receiverId: string; text: string, email: string, subject: string }) => {
+        const { receiverId, text, email, subject } = data;
+
+        if (!receiverId || !text || !email) {
+            socket.emit("error", { message: "SenderId or text is missing!" });
+            return;
+        }
+
+        // console.log("senderId", senderId, text, email);
+
+        if (!receiverId) {
+            throw new ApiError(404, "Receiver user not found");
+        }
+
+        let conversation = await Conversation.findOne({
+            participants: { $all: [receiverId, senderId] },
+        });
+
+        if (!conversation) {
+            conversation = await Conversation.create({
+                participants: [receiverId, senderId],
+            });
+        }
+
+        const newMessage = new Message({
+            senderId,
+            receiverId,
+            message: text,
+            subject: subject,
+            conversationId: conversation._id,
+        });
+
+        console.log("conversation", newMessage, conversation);
+
+        conversation.messages.push(newMessage._id);
+        await Promise.all([conversation.save(), newMessage.save()]);
+
+        // Emit message to both users
+        emitMessage(senderId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${receiverId}`);
+        emitMessage(receiverId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${senderId}`);
+    });
+
+    // Get Order All Messages
     socket.on(ENUM_SOCKET_EVENT.MESSAGE_GETALL_ORDER, async (data: {
         orderid: string,
         page: number,
@@ -48,45 +128,7 @@ const handleMessageData = async (
         }
     },
     );
-
-    socket.on(ENUM_SOCKET_EVENT.MESSAGE_NEW, async (data: { receiverId: string; text: string }) => {
-        const { receiverId, text } = data;
-
-        if (!senderId || !text) {
-            socket.emit("error", { message: "SenderId or text is missing!" });
-            return;
-        }
-
-        if (!receiverId) {
-            throw new ApiError(404, "Receiver user not found");
-        }
-
-        let conversation = await Conversation.findOne({
-            participants: { $all: [receiverId, senderId] },
-        });
-
-        if (!conversation) {
-            conversation = await Conversation.create({
-                participants: [receiverId, senderId],
-            });
-        }
-
-        const newMessage = new Message({
-            senderId,
-            receiverId,
-            text,
-            conversationId: conversation._id,
-        });
-
-        conversation.messages.push(newMessage._id);
-        await Promise.all([conversation.save(), newMessage.save()]);
-
-        // Emit message to both users
-        emitMessage(senderId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW}/${receiverId}`);
-        emitMessage(receiverId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_NEW}/${senderId}`);
-    });
-
-    // Handle new messages related to orders
+    // Send Message for Orders
     socket.on(ENUM_SOCKET_EVENT.MESSAGE_NEW_ORDER, async (data: { orderId: string; text: string }) => {
         const { orderId, text } = data;
         try {
@@ -131,7 +173,7 @@ const handleMessageData = async (
             socket.emit("error", { message: "An error occurred while processing the message." });
         }
     });
-
+    // Send Revisions for Orders
     socket.on(ENUM_SOCKET_EVENT.REVISIONS_MESSAGE, async (
         data: { taskId: string; text: string; fileId: string },
         callback: (response: any) => void
@@ -158,7 +200,6 @@ const handleMessageData = async (
             }
 
             const orderId = task.orderId;
-
             let conversation = await Conversation.findOne({ orderId });
             if (!conversation) {
                 conversation = await Conversation.create({
@@ -176,7 +217,7 @@ const handleMessageData = async (
                 isRevision: true,
                 conversationId: conversation._id,
                 fileId: fileId,
-                taskId: taskId,
+                taskId: taskId
             });
 
             conversation.messages.push(newMessage._id);
@@ -211,6 +252,41 @@ const handleMessageData = async (
             socket.emit("error", { message: "An error occurred while processing the message." });
         }
     });
+    // Get Conversation List
+    socket.on(ENUM_SOCKET_EVENT.CONVERSION_LIST, async () => {
+        try {
+
+            const conversations = await Conversation.find({
+                participants: { $in: [senderId] },
+                orderId: null
+            })
+                .populate({
+                    path: 'participants',
+                    select: 'name email profile_image',
+                })
+                .populate({
+                    path: 'messages',
+                    options: { sort: { createdAt: -1 }, limit: 1 },
+                    // populate: {
+                    //     path: 'senderId',
+                    //     select: 'name email profile_image',
+                    // }
+                })
+                .sort({ updatedAt: -1 });
+
+            console.log("conversations", conversations)
+
+            await emitMessage(senderId, conversations, ENUM_SOCKET_EVENT.CONVERSION_LIST);
+
+        } catch (error) {
+            console.error('Error fetching conversations:', error);
+        }
+    });
+
+
+
+
+
 
 };
 

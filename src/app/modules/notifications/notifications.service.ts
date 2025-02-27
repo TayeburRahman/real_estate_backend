@@ -2,13 +2,26 @@ import { Request } from 'express';
 import Notification from './notifications.model';
 import ApiError from '../../../errors/ApiError';
 import { IReqUser } from '../auth/auth.interface';
+import { SendNotificationParams } from './notifications.interface';
+import Client from '../client/client.model';
+import { sendMessageEmail } from '../../../mails/sendMessageEmail';
+import { emailNotifications } from './emailNotifications';
+import { ENUM_USER_ROLE } from '../../../enums/user';
 
-const getNotifications = async () => {
-  const allNotification = await Notification.find({ admin: true }).sort({
-    createdAt: -1,
-  });
+const getAdminNotifications = async (user: IReqUser) => {
+  const { userId, role } = user;
+  let notifications;
+  if (role === ENUM_USER_ROLE.MEMBER) {
+    notifications = await Notification.find({ user: userId }).sort({
+      createdAt: -1,
+    });
+  } else {
+    notifications = await Notification.find({ isAdmin: true }).sort({
+      createdAt: -1,
+    });
+  }
   return {
-    allNotification,
+    notifications,
   };
 };
 
@@ -36,23 +49,70 @@ const updateNotification = async (req: Request) => {
   return result;
 };
 
-const updateAll = async () => {
-  const result = await Notification.updateMany(
-    { status: false },
-    { $set: { status: true } },
-    { new: true },
-  ).sort({ createdAt: -1 });
+const seenNotifications = async (user: IReqUser) => {
+  const { userId, role } = user;
+
+  let result;
+  if (role === ENUM_USER_ROLE.ADMIN || role === ENUM_USER_ROLE.SUPER_ADMIN) {
+    result = await Notification.updateMany(
+      { isAdmin: true },
+      { $set: { status: true } },
+      { new: true },
+    ).sort({ createdAt: -1 });
+  } else {
+    result = await Notification.updateMany(
+      { user: userId },
+      { $set: { status: true } },
+      { new: true },
+    ).sort({ createdAt: -1 });
+  }
+
   return result;
 };
 
-const myNotification = async (user: IReqUser) => {
-  return await Notification.find({ user: user.userId }).sort({ createdAt: -1 });
+const clientNotification = async (query: any) => {
+  if (!query?.clientId) {
+    throw new ApiError(400, 'Missing Client ID');
+  }
+  return await Notification.find({ user: query.clientId }).sort({ createdAt: -1 });
+};
+
+const sendNotification = async ({ title, message, user, types, isAdmin, orderId }: SendNotificationParams): Promise<void> => {
+  try {
+    await Notification.create({
+      title,
+      message,
+      user,
+      types,
+      isAdmin,
+      orderId,
+    });
+
+    if (types === "client") {
+      const client = await Client.findById(user)
+      if (client?.email_notifications) {
+        await sendMessageEmail(
+          client.email as string,
+          "Notification Message",
+          emailNotifications({
+            name: client.name,
+            title,
+            message
+          })
+        );
+      }
+
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
 };
 
 export const NotificationService = {
-  getNotifications,
+  getAdminNotifications,
   updateNotification,
-  myNotification,
-  updateAll,
+  clientNotification,
+  seenNotifications,
   deleteNotifications,
+  sendNotification,
 };
