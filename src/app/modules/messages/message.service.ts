@@ -185,6 +185,12 @@ const getFavoriteList = async (user: IReqUser) => {
   return conversation;
 }
 
+// const deleteConversation = async (user: IReqUser, ) => {
+//   const conversation = await Conversation.findByIdAndDelete(user.params.id);
+
+//   return conversation;
+// }
+
 export const messageService = {
   addOrRemoveFavoriteList,
   sendMessage,
