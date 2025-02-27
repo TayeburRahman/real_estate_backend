@@ -1,7 +1,11 @@
 node_modules
-.env
 .vercel 
 logs/
 dist/
 entrypoint.sh
 yarn.lock
+config.bat
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore

@@ -8,6 +8,7 @@ import { Types } from 'mongoose';
 import { Orders } from '../orders/order.model';
 import { IOrder } from '../orders/order.interface';
 import { ENUM_USER_ROLE } from '../../../enums/user';
+import { IReqUser } from '../auth/auth.interface';
 
 
 const updateMyProfile = async (req: RequestData) => {
@@ -273,9 +274,20 @@ const getRecentDeliverOrder = async (query: { clientId: string }) => {
 };
 
 // *Orders***==============================
-const getClientOrder = async (query: { clientId: string, searchTerm?: string, filter?: string }) => {
+const getClientOrder = async (query: { clientId: string, searchTerm?: string, filter?: string }, user: IReqUser) => {
   if (!query.clientId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Missing Client ID");
+  }
+
+  const { userId, role } = user;
+  let accessOnlyAssignedOrder = false;
+
+  if (role === ENUM_USER_ROLE.AGENT) {
+    const agent = await Client.findById(userId);
+    if (!agent) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized access");
+    }
+    accessOnlyAssignedOrder = agent.can_see_assigned_order;
   }
 
   const searchCondition = query.searchTerm
@@ -307,10 +319,17 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
     }
   }
 
-  const orders = await Orders.find({
+  const filterCondition: any = {
     "clientId": query.clientId,
     ...searchCondition,
-  })
+  };
+
+  // If the agent has access to only assigned orders, filter by linkedAgents
+  if (accessOnlyAssignedOrder) {
+    filterCondition.linkedAgents = userId; // Filter orders where the agent is linked to the order
+  }
+
+  const orders = await Orders.find(filterCondition)
     .populate({
       path: 'schedule.memberId',
       select: 'name'
@@ -368,7 +387,8 @@ const getClientOrder = async (query: { clientId: string, searchTerm?: string, fi
   });
 
   return ordersWithStatus;
-}
+};
+
 
 export const ClientService = {
   getProfile,

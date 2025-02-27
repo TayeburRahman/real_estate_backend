@@ -17,7 +17,9 @@ router.get("/upcoming-appointment",
 router.get("/recent-deliver-order",
     ClientController.getRecentDeliverOrder);
 router.get("/get-all-orders",
-    ClientController.getClientOrder);
+    auth(ENUM_USER_ROLE.CLIENT,
+        ENUM_USER_ROLE.AGENT,
+    ), ClientController.getClientOrder);
 
 router.get("/clients-invoice",
     ClientController.getAllClientsWithOrder);
