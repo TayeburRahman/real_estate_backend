@@ -129,7 +129,6 @@ const getSignalOrder = catchAsync(async (req: Request, res: Response) => {
 const getRecentOrder = catchAsync(async (req: Request, res: Response) => {
 
     const query = req.query as GetAllOrderQuery;
-
     const result = await OrdersService.getRecentOrders(query);
 
     sendResponse(res, {
@@ -165,6 +164,20 @@ const getOrderGrows = catchAsync(async (req: Request, res: Response) => {
     });
 })
 
+const getOrderStatusCount = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await OrdersService.getOrderStatusCount();
+
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Get successfully",
+        data: result,
+    });
+})
+
+
+
 export const OrdersController = {
     createNewOrder,
     updateOrder,
@@ -177,5 +190,6 @@ export const OrdersController = {
     getSignalOrder,
     getRecentOrder,
     needSubmitToday,
-    getOrderGrows
+    getOrderGrows,
+    getOrderStatusCount
 }

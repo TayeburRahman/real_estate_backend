@@ -299,6 +299,8 @@ const getNewTasks = async (
 
   let matchQuery: any = {};
 
+  console.log("role=======", role, userId)
+
   if (role === ENUM_USER_ROLE.MEMBER) {
     matchQuery.schedule_memberId = { $in: [new Types.ObjectId(userId)] };
   }

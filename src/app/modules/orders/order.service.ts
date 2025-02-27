@@ -677,9 +677,17 @@ const getOrderStatusCount = async () => {
         status: "Progress",
     });
 
+
+    const completeOrdersCount = await Orders.countDocuments({
+        status: "Completed",
+    });
+    const totalOrdersCount = await Orders.countDocuments({});
+
     return {
         todayOrders: todayOrdersCount,
         pendingOrders: pendingOrdersCount,
+        completeOrders: completeOrdersCount,
+        totalOrders: totalOrdersCount,
     };
 };
 
@@ -697,5 +705,6 @@ export const OrdersService = {
     updateStatusOrder,
     getRecentOrders,
     needSubmitToday,
-    getOrderGrows
+    getOrderGrows,
+    getOrderStatusCount
 }
