@@ -174,6 +174,14 @@ const registrationUser = async (files: any, payload: IAuth) => {
   // Role-based user creation
   let result;
   if (role === ENUM_USER_ROLE.CLIENT || role === ENUM_USER_ROLE.AGENT) {
+    if (role === ENUM_USER_ROLE.CLIENT) {
+      other.place_an_order = true
+      other.can_see_all_order = true;
+      other.can_see_invoice = true;
+      other.can_see_assigned_order = true;
+      other.can_see_pricing = true;
+      other.can_add_new_agent = true;
+    }
     result = await Client.create(other);
   } else if (
     role === ENUM_USER_ROLE.ADMIN ||

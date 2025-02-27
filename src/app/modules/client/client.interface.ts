@@ -27,5 +27,12 @@ export interface IClient extends Document {
   address: string | null;
   role: string | null;
   clientId: string | null;
+  place_an_order: boolean;
+  can_see_all_order: boolean;
+  can_see_invoice: boolean;
+  can_see_assigned_order: boolean;
+  can_see_pricing: boolean;
+  can_add_new_agent: boolean;
   // location?: ILocation;
 }
+

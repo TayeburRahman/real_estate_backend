@@ -7,6 +7,7 @@ import QueryBuilder from '../../../builder/QueryBuilder';
 import { Types } from 'mongoose';
 import { Orders } from '../orders/order.model';
 import { IOrder } from '../orders/order.interface';
+import { ENUM_USER_ROLE } from '../../../enums/user';
 
 
 const updateMyProfile = async (req: RequestData) => {
@@ -67,6 +68,15 @@ const updateProfile = async (req: RequestData) => {
   }
 
   const updatedUserData = { ...data, ...fileUploads };
+
+  if (checkValidClient.role === ENUM_USER_ROLE.CLIENT) {
+    updatedUserData.place_an_order = true
+    updatedUserData.can_see_all_order = true;
+    updatedUserData.can_see_invoice = true;
+    updatedUserData.can_see_assigned_order = true;
+    updatedUserData.can_see_pricing = true;
+    updatedUserData.can_add_new_agent = true;
+  }
 
   const [auth, result] = await Promise.all([
     Auth.findByIdAndUpdate(

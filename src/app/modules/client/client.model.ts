@@ -65,6 +65,30 @@ const ClientSchema = new Schema<IClient>(
       type: Boolean,
       default: false,
     },
+    place_an_order: {
+      type: Boolean,
+      default: false,
+    },
+    can_see_all_order: {
+      type: Boolean,
+      default: false,
+    },
+    can_see_invoice: {
+      type: Boolean,
+      default: false,
+    },
+    can_see_assigned_order: {
+      type: Boolean,
+      default: false,
+    },
+    can_add_new_agent: {
+      type: Boolean,
+      default: false,
+    },
+    can_see_pricing: {
+      type: Boolean,
+      default: false,
+    },
     email_invoice: {
       type: Boolean,
       default: false,

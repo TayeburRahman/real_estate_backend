@@ -25,23 +25,21 @@ const handleMessageData = async (
             return;
         }
         const conversation = await Conversation.findOne({
-            senderId, receiverId
-        }).populate({
-            path: 'messages',
-            populate: {
-                path: 'senderId',
-                select: 'name email profile_image',
-            },
-            options: {
-                sort: { createdAt: -1 },
-                skip: (page - 1) * 20,
-                limit: 20,
-            },
-        });
-
-        if (!conversation) {
-            return 'Conversation not found';
-        }
+            participants: { $all: [senderId, receiverId] },
+            orderId: null
+        })
+            .populate({
+                path: 'messages',
+                // options: {
+                //     sort: { createdAt: -1 },
+                //     skip: (page - 1) * 20,
+                //     limit: 20,
+                // },
+                populate: [
+                    { path: 'senderId', select: 'name email profile_image' },
+                    { path: 'receiverId', select: 'name email profile_image' }
+                ]
+            });
 
         if (conversation) {
             await emitMessage(senderId, conversation, ENUM_SOCKET_EVENT.MESSAGE_GETALL)
@@ -86,9 +84,47 @@ const handleMessageData = async (
         conversation.messages.push(newMessage._id);
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        // Emit message to both users
-        emitMessage(senderId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${receiverId}`);
-        emitMessage(receiverId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${senderId}`);
+        // ====================
+        const conversations = await Conversation.find({
+            participants: { $in: [senderId] },
+            orderId: null
+        })
+            .populate({
+                path: 'participants',
+                select: 'name email profile_image',
+            })
+            .populate({
+                path: 'messages',
+                options: { sort: { createdAt: -1 }, limit: 1 },
+            })
+            .sort({ updatedAt: -1 });
+
+        await emitMessage(senderId, conversations, ENUM_SOCKET_EVENT.CONVERSION_LIST);
+        // ==========================
+        const messages = await Conversation.findOne({
+            participants: { $all: [senderId, receiverId] },
+            orderId: null
+        })
+            .populate({
+                path: 'messages',
+                // options: {
+                //     sort: { createdAt: -1 },
+                //     skip: (page - 1) * 20,
+                //     limit: 20,
+                // },
+                populate: [
+                    { path: 'senderId', select: 'name email profile_image' },
+                    { path: 'receiverId', select: 'name email profile_image' }
+                ]
+            });
+
+        if (messages) {
+            await emitMessage(senderId, messages, ENUM_SOCKET_EVENT.MESSAGE_GETALL)
+        }
+
+        // =========================== 
+        await emitMessage(senderId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${receiverId}`);
+        await emitMessage(receiverId, newMessage, `${ENUM_SOCKET_EVENT.MESSAGE_EMAIL_NEW}/${senderId}`);
     });
 
     // Get Order All Messages

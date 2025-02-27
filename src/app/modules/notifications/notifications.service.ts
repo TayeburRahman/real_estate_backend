@@ -7,6 +7,7 @@ import Client from '../client/client.model';
 import { sendMessageEmail } from '../../../mails/sendMessageEmail';
 import { emailNotifications } from './emailNotifications';
 import { ENUM_USER_ROLE } from '../../../enums/user';
+import { IClient } from '../client/client.interface';
 
 const getAdminNotifications = async (user: IReqUser) => {
   const { userId, role } = user;
@@ -51,11 +52,17 @@ const updateNotification = async (req: Request) => {
 
 const seenNotifications = async (user: IReqUser) => {
   const { userId, role } = user;
-
   let result;
   if (role === ENUM_USER_ROLE.ADMIN || role === ENUM_USER_ROLE.SUPER_ADMIN) {
     result = await Notification.updateMany(
       { isAdmin: true },
+      { $set: { status: true } },
+      { new: true },
+    ).sort({ createdAt: -1 });
+  } else if (role === ENUM_USER_ROLE.AGENT) {
+    const agent = await Client.findById(userId) as IClient;
+    result = await Notification.updateMany(
+      { user: agent.clientId },
       { $set: { status: true } },
       { new: true },
     ).sort({ createdAt: -1 });
