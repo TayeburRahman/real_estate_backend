@@ -84,7 +84,8 @@ const getRecentDeliverOrder = catchAsync(async (req: Request, res: Response) => 
 
 const getClientOrder = catchAsync(async (req: Request, res: Response) => {
   const query = req.query as any;
-  const result = await ClientService.getClientOrder(query);
+  const user = req.user as any;
+  const result = await ClientService.getClientOrder(query, user);
   sendResponse(res, {
     statusCode: 200,
     success: true,
